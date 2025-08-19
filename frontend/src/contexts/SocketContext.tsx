@@ -27,7 +27,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Connect to backend
-    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001');
+    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'https://wti-q8dr.onrender.com');
     
     newSocket.on('connect', () => {
       console.log('Connected to server');
