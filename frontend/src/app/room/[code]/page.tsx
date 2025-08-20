@@ -257,11 +257,6 @@ export default function RoomPage() {
         // Show normal game UI (gameStartTriggered = true, showGameStart = false)
         return (
           <div>
-            <RoleDisplay
-              isImpostor={playerRole.isImpostor}
-              category={playerRole.category}
-              word={playerRole.word}
-            />
             <ClueSubmission
               currentRound={currentRoom.currentRound}
               maxRounds={currentRoom.maxRounds}
