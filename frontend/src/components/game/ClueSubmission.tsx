@@ -153,30 +153,31 @@ export default function ClueSubmission({
       {currentRoom?.gamePhase === 'writing' && (
         <>
           {!hasSubmittedClue ? (
-            <div className="bg-white/5 rounded-lg p-4 border border-white/10 mb-6">
-              <label className="block text-white/80 text-sm font-medium mb-2">
-                Your Clue:
+            <div className="bg-blue-500/10 border-2 border-blue-400/50 rounded-lg p-6 mb-6 shadow-lg">
+              <label className="block text-white text-lg font-bold mb-3 text-center">
+                ✏️ Enter Your Clue Below:
               </label>
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <input
                   type="text"
                   value={clueInput}
                   onChange={(e) => setClueInput(e.target.value)}
-                  placeholder="Enter your clue..."
-                  className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  placeholder="Type your clue here..."
+                  className="flex-1 px-6 py-4 bg-white/20 border-2 border-blue-400/50 rounded-lg text-white text-lg placeholder-white/70 focus:outline-none focus:ring-4 focus:ring-blue-400/50 focus:border-blue-300 transition-all duration-200"
                   maxLength={50}
                   onKeyPress={(e) => e.key === 'Enter' && handleSubmitClue()}
                 />
                 <button
                   onClick={handleSubmitClue}
                   disabled={!clueInput.trim()}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center"
+                  className="px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold text-lg rounded-lg hover:from-blue-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center shadow-lg"
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="w-5 h-5 mr-2" />
+                  Submit
                 </button>
               </div>
-              <p className="text-white/40 text-xs mt-1">
-                Be descriptive but not too obvious!
+              <p className="text-blue-200 text-sm mt-3 text-center font-medium">
+                💡 Be descriptive but not too obvious! Help your team identify you.
               </p>
             </div>
           ) : (
@@ -200,93 +201,107 @@ export default function ClueSubmission({
 
       {/* DECISION PHASE */}
       {currentRoom?.gamePhase === 'decision' && (
-        <div className="bg-white/5 rounded-lg p-6 border border-white/10 mb-6">
-          <h3 className="text-xl font-semibold text-white mb-4 text-center">
-            What should we do next?
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {/* Next Round Button */}
-            <button
-              onClick={voteNextRound}
-              disabled={playerVotedToVote}
-              className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                playerVotedNextRound
-                  ? 'border-blue-400 bg-blue-500/20 text-blue-300'
-                  : 'border-white/20 bg-white/5 hover:border-blue-400 hover:bg-blue-500/10 text-white'
-              } disabled:opacity-50`}
-            >
-              <div className="flex items-center justify-center mb-2">
-                <ArrowRight className="w-6 h-6 mr-2" />
-                <span className="font-semibold">Next Round</span>
+        <>
+          {/* Clue Table - Featured prominently during decision phase */}
+          {currentRoom && clues.length > 0 && (
+            <div className="mb-8">
+              <div className="text-center mb-4">
+                <h3 className="text-2xl font-bold text-yellow-400 mb-2">
+                  📝 Review Everyone's Clues
+                </h3>
+                <p className="text-white/80">
+                  Study the clues carefully - who might be the impostor?
+                </p>
               </div>
-              <p className="text-sm opacity-80">
-                Continue with Round {currentRound + 1}
-              </p>
-              {playerVotedNextRound && (
-                <div className="mt-2 text-blue-300 text-sm">✓ You voted for this</div>
-              )}
-            </button>
-
-            {/* Ready to Vote Button */}
-            <button
-              onClick={voteReadyToVote}
-              disabled={playerVotedNextRound}
-              className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                playerVotedToVote
-                  ? 'border-red-400 bg-red-500/20 text-red-300'
-                  : 'border-white/20 bg-white/5 hover:border-red-400 hover:bg-red-500/10 text-white'
-              } disabled:opacity-50`}
-            >
-              <div className="flex items-center justify-center mb-2">
-                <Vote className="w-6 h-6 mr-2" />
-                <span className="font-semibold">Vote Now</span>
+              <div className="border-2 border-yellow-400/50 rounded-lg p-4 bg-yellow-500/10">
+                <ClueTable
+                  players={currentRoom.players}
+                  clues={clues}
+                  currentRound={currentRound}
+                  maxRounds={maxRounds}
+                  currentRoundClues={currentRoom.currentRoundClues}
+                />
               </div>
-              <p className="text-sm opacity-80">
-                Skip to voting phase
-              </p>
-              {playerVotedToVote && (
-                <div className="mt-2 text-red-300 text-sm">✓ You voted for this</div>
-              )}
-            </button>
-          </div>
-
-          {/* Voting Progress */}
-          <div className="bg-white/5 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-white/80 text-sm">Decision Progress:</span>
-              <span className="text-white text-sm font-medium">
-                {totalVotes} / {totalPlayers}
-              </span>
             </div>
+          )}
+
+          <div className="bg-white/5 rounded-lg p-6 border border-white/10 mb-6">
+            <h3 className="text-xl font-semibold text-white mb-4 text-center">
+              What should we do next?
+            </h3>
             
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <div className="text-blue-300 font-semibold">
-                  {nextRoundVotes}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {/* Next Round Button */}
+              <button
+                onClick={voteNextRound}
+                disabled={playerVotedToVote}
+                className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                  playerVotedNextRound
+                    ? 'border-blue-400 bg-blue-500/20 text-blue-300'
+                    : 'border-white/20 bg-white/5 hover:border-blue-400 hover:bg-blue-500/10 text-white'
+                } disabled:opacity-50`}
+              >
+                <div className="flex items-center justify-center mb-2">
+                  <ArrowRight className="w-6 h-6 mr-2" />
+                  <span className="font-semibold">Next Round</span>
                 </div>
-                <div className="text-white/60 text-xs">Next Round</div>
+                <p className="text-sm opacity-80">
+                  Continue with Round {currentRound + 1}
+                </p>
+                {playerVotedNextRound && (
+                  <div className="mt-2 text-blue-300 text-sm">✓ You voted for this</div>
+                )}
+              </button>
+
+              {/* Ready to Vote Button */}
+              <button
+                onClick={voteReadyToVote}
+                disabled={playerVotedNextRound}
+                className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                  playerVotedToVote
+                    ? 'border-red-400 bg-red-500/20 text-red-300'
+                    : 'border-white/20 bg-white/5 hover:border-red-400 hover:bg-red-500/10 text-white'
+                } disabled:opacity-50`}
+              >
+                <div className="flex items-center justify-center mb-2">
+                  <Vote className="w-6 h-6 mr-2" />
+                  <span className="font-semibold">Vote Now</span>
+                </div>
+                <p className="text-sm opacity-80">
+                  Skip to voting phase
+                </p>
+                {playerVotedToVote && (
+                  <div className="mt-2 text-red-300 text-sm">✓ You voted for this</div>
+                )}
+              </button>
+            </div>
+
+            {/* Voting Progress */}
+            <div className="bg-white/5 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-white/80 text-sm">Decision Progress:</span>
+                <span className="text-white text-sm font-medium">
+                  {totalVotes} / {totalPlayers}
+                </span>
               </div>
-              <div>
-                <div className="text-red-300 font-semibold">
-                  {readyToVoteVotes}
+              
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div>
+                  <div className="text-blue-300 font-semibold">
+                    {nextRoundVotes}
+                  </div>
+                  <div className="text-white/60 text-xs">Next Round</div>
                 </div>
-                <div className="text-white/60 text-xs">Vote Now</div>
+                <div>
+                  <div className="text-red-300 font-semibold">
+                    {readyToVoteVotes}
+                  </div>
+                  <div className="text-white/60 text-xs">Vote Now</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Clue Table - Show for all phases where clues exist */}
-      {currentRoom && clues.length > 0 && (
-        <ClueTable
-          players={currentRoom.players}
-          clues={clues}
-          currentRound={currentRound}
-          maxRounds={maxRounds}
-          currentRoundClues={currentRoom.currentRoundClues}
-        />
+        </>
       )}
 
       {/* Legacy host controls notice */}
