@@ -15,18 +15,18 @@ import ClueSubmission from '@/components/game/ClueSubmission';
 import VotingInterface from '@/components/game/VotingInterface';
 import ResultsScreen from '@/components/game/ResultsScreen';
 import GameStartSequence from '@/components/game/GameStartSequence';
-import GeneralTransitions from '@/components/game/GeneralTransitions';
+import GeneralTransitions from '@/components/game/GeneralTransitions'; // 🆕 NEW: Import for vote transition
 
 export default function RoomPage() {
   const params = useParams();
   const code = params.code as string;
   const router = useRouter();
   
-  // GameStart transition state
+  // NEW: GameStart transition state
   const [showGameStart, setShowGameStart] = useState(false);
   const [gameStartTriggered, setGameStartTriggered] = useState(false);
   
-  // Vote transition state
+  // 🆕 NEW: Vote transition state
   const [showVoteTransition, setShowVoteTransition] = useState(false);
   const [voteTransitionTriggered, setVoteTransitionTriggered] = useState<string | null>(null);
   
@@ -36,56 +36,85 @@ export default function RoomPage() {
     leaveRoom, 
     startGame, 
     submitClue, 
-    currentRoom
+    voteNextRound,
+    voteReadyToVote,
+    submitVote,
+    submitFinalGuess,
+    playAgain,
+    currentRoom // 🆕 NEW: Get currentRoom directly for vote detection
   } = useSocket();
 
-  // Game state
+  // Clean game state from our updated hook
   const {
     playerRole,
     isHost,
     hasSubmittedClue,
     setHasSubmittedClue,
     gameResults,
-    totalPlayers
+    totalPlayers,
+    currentPhase,
+    
+    // Democratic voting status  
+    playerVotedNextRound,
+    playerVotedToVote,
+    nextRoundVotes,
+    readyToVoteVotes
   } = useGameState();
 
-  // Trigger GameStart transitions when game begins
+  // NEW: Trigger GameStart transitions when game begins
   useEffect(() => {
     if (currentRoom?.gameState === 'playing' && playerRole && !gameStartTriggered) {
+      console.log('🚀 Game started, triggering GameStart sequence');
       setShowGameStart(true);
       setGameStartTriggered(true);
     }
   }, [currentRoom?.gameState, playerRole, gameStartTriggered]);
 
-  // Reset GameStart state when game ends or restarts
+  // NEW: Reset GameStart state when game ends or restarts
   useEffect(() => {
     if (currentRoom?.gameState === 'waiting' || currentRoom?.gameState === 'finished') {
+      console.log('🔄 Game ended/reset, resetting GameStart state');
       setShowGameStart(false);
       setGameStartTriggered(false);
+      // Reset vote transition state too
       setShowVoteTransition(false);
       setVoteTransitionTriggered(null);
     }
   }, [currentRoom?.gameState]);
 
-  // Detect "Ready to Vote" transition at room level
+  // 🆕 NEW: Detect "Ready to Vote" transition at room level
   useEffect(() => {
     if (!currentRoom) return;
     
+    const majorityThreshold = Math.ceil(totalPlayers / 2);
     const transitionKey = `room-vote-${currentRoom.currentRound}`;
     
-    // Trigger when we detect voting phase has started
+    // 🔍 DEBUG: Log individual values (not objects)
+    console.log('🔍 ROOM VOTE DEBUG VALUES:');
+    console.log('  readyToVoteVotes:', readyToVoteVotes);
+    console.log('  majorityThreshold:', majorityThreshold);
+    console.log('  gamePhase:', currentRoom.gamePhase);
+    console.log('  gameState:', currentRoom.gameState);
+    console.log('  transitionKey:', transitionKey);
+    console.log('  voteTransitionTriggered:', voteTransitionTriggered);
+    
+    // 🔧 FIXED: Detect when we ENTER voting phase (not while in decision)
     const shouldTrigger = currentRoom.gamePhase === 'voting' && 
                          currentRoom.gameState === 'voting' && 
                          voteTransitionTriggered !== transitionKey;
+    console.log('  shouldTrigger:', shouldTrigger);
     
+    // Trigger when we detect voting phase has started
     if (shouldTrigger) {
+      console.log('🎯 ROOM LEVEL: Voting phase detected - showing transition');
       setShowVoteTransition(true);
       setVoteTransitionTriggered(transitionKey);
     }
-  }, [currentRoom?.gamePhase, currentRoom?.gameState, currentRoom?.currentRound, voteTransitionTriggered]);
+  }, [currentRoom?.gamePhase, currentRoom?.gameState, currentRoom?.currentRound, voteTransitionTriggered, readyToVoteVotes, totalPlayers]);
 
-  // Handle vote transition completion
+  // 🆕 NEW: Handle vote transition completion
   const handleVoteTransitionComplete = () => {
+    console.log('🏁 Vote transition completed at room level');
     setShowVoteTransition(false);
   };
 
@@ -106,8 +135,9 @@ export default function RoomPage() {
     setHasSubmittedClue(true);
   };
 
-  // Handle GameStart completion
+  // NEW: Handle GameStart completion
   const handleGameStartComplete = () => {
+    console.log('🏁 GameStart sequence completed');
     setShowGameStart(false);
   };
 
@@ -130,7 +160,7 @@ export default function RoomPage() {
     );
   }
 
-  // Show vote transition if active
+  // 🆕 NEW: Show vote transition if active (before other game content)
   if (showVoteTransition) {
     return (
       <div className="max-w-6xl mx-auto">
@@ -141,12 +171,23 @@ export default function RoomPage() {
           onCopyCode={handleCopyCode}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-1">
+            {/* Role Display - Always visible in sidebar */}
+            {playerRole && (
+              <div className="mb-4">
+                <RoleDisplay
+                  isImpostor={playerRole.isImpostor}
+                  category={playerRole.category}
+                  word={playerRole.word}
+                />
+              </div>
+            )}
+            
             <PlayerList players={currentRoom.players} />
           </div>
 
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-3">
             <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 shadow-2xl border border-white/20 h-full">
               <GeneralTransitions
                 transitionType="ready-to-vote"
@@ -176,7 +217,8 @@ export default function RoomPage() {
         );
 
       case 'playing':
-        // Show loading until GameStart system is ready
+        // 🔧 LOADING STATE: Show loading until GameStart system is ready
+        // This prevents the flash of game UI before GameStart triggers
         if (!playerRole || !gameStartTriggered) {
           return (
             <div className="flex items-center justify-center h-96">
@@ -202,7 +244,7 @@ export default function RoomPage() {
           );
         }
 
-        // Show GameStart sequence
+        // Show GameStart sequence (gameStartTriggered = true, showGameStart = true)
         if (showGameStart) {
           return (
             <GameStartSequence
@@ -212,7 +254,7 @@ export default function RoomPage() {
           );
         }
 
-        // Show normal game UI
+        // Show normal game UI (gameStartTriggered = true, showGameStart = false)
         return (
           <div>
             <RoleDisplay
@@ -237,6 +279,7 @@ export default function RoomPage() {
         return <VotingInterface />;
 
       case 'finalGuess':
+        // If we have final game results, show finished screen instead
         if (gameResults?.gameEnded) {
           return <ResultsScreen gameState="finished" results={gameResults} />;
         }
@@ -268,12 +311,23 @@ export default function RoomPage() {
         onCopyCode={handleCopyCode}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
+          {/* Role Display - Always visible in sidebar */}
+          {playerRole && (
+            <div className="mb-4">
+              <RoleDisplay
+                isImpostor={playerRole.isImpostor}
+                category={playerRole.category}
+                word={playerRole.word}
+              />
+            </div>
+          )}
+          
           <PlayerList players={currentRoom.players} />
         </div>
 
-        <div className="lg:col-span-4">
+        <div className="lg:col-span-3">
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 shadow-2xl border border-white/20 h-full">
             {renderGameContent()}
           </div>

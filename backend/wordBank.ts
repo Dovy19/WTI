@@ -51,7 +51,7 @@ export const WORD_BANK: WordPair[] = [
   { word: "Yone", category: "Set 15 Unit" },
 
   // TFT Set 15 Items
-   { word: "Guinsoos Rageblade", category: "Set 15 Item" },
+  { word: "Guinsoos Rageblade", category: "Set 15 Item" },
   { word: "Gargoyle Stoneplate", category: "Set 15 Item" },
   { word: "Infinity Edge", category: "Set 15 Item" },
   { word: "Strikers Flail", category: "Set 15 Item" },
