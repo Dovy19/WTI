@@ -1,14 +1,33 @@
 // src/components/ui/PlayerList.tsx
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Crown, Users, Trophy } from 'lucide-react';
 import { Player } from '../../../../shared/types';
 
 interface PlayerListProps {
   players: Player[];
+  delayPointsUpdate?: boolean; // 🆕 NEW: Flag to delay showing updated points
 }
 
-export default function PlayerList({ players }: PlayerListProps) {
+export default function PlayerList({ players, delayPointsUpdate = false }: PlayerListProps) {
+  // 🆕 NEW: Store previous points to show during transitions
+  const [displayPlayers, setDisplayPlayers] = useState<Player[]>(players);
+
+  // 🆕 NEW: Update display players based on delay flag
+  useEffect(() => {
+    if (!delayPointsUpdate) {
+      // Show current points when not delaying
+      setDisplayPlayers(players);
+    }
+    // When delayPointsUpdate is true, keep showing the old points (don't update displayPlayers)
+  }, [players, delayPointsUpdate]);
+
+  // 🆕 NEW: Initialize displayPlayers when component first mounts
+  useEffect(() => {
+    setDisplayPlayers(players);
+  }, []); // Only run once on mount
+
   return (
     <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 shadow-2xl border border-white/20">
       <div className="flex items-center mb-4">
@@ -19,7 +38,7 @@ export default function PlayerList({ players }: PlayerListProps) {
       </div>
 
       <div className="space-y-3">
-        {players.map((player) => (
+        {displayPlayers.map((player) => (
           <div
             key={player.id}
             className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10"
@@ -37,7 +56,7 @@ export default function PlayerList({ players }: PlayerListProps) {
                     <Crown className="w-4 h-4 text-yellow-400 ml-2" />
                   )}
                 </div>
-                {/* NEW: Points Display */}
+                {/* Points Display - Shows old points during transitions */}
                 <div className="flex items-center mt-1">
                   <Trophy className="w-3 h-3 text-yellow-400 mr-1" />
                   <span className="text-yellow-400 text-xs font-medium">
@@ -58,14 +77,14 @@ export default function PlayerList({ players }: PlayerListProps) {
         </div>
       )}
 
-      {/* NEW: Points Leaderboard (when game has been played) */}
-      {players.some(p => (p.points || 0) > 0) && (
+      {/* Points Leaderboard - Also uses display players */}
+      {displayPlayers.some(p => (p.points || 0) > 0) && (
         <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
           <h3 className="text-white/80 text-sm font-medium mb-2 text-center">
             🏆 Session Leaderboard
           </h3>
           <div className="space-y-1">
-            {players
+            {displayPlayers
               .sort((a, b) => (b.points || 0) - (a.points || 0))
               .slice(0, 3)
               .map((player, index) => (

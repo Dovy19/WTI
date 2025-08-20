@@ -10,9 +10,14 @@ import TransitionSequence from './TransitionSequence';
 interface ResultsScreenProps {
   gameState: 'finalGuess' | 'finished';
   results?: GameResults | null;
+  onEndGameTransitionsComplete?: () => void; // 🆕 NEW: Callback for transition completion
 }
 
-export default function ResultsScreen({ gameState, results: propsResults }: ResultsScreenProps) {
+export default function ResultsScreen({ 
+  gameState, 
+  results: propsResults, 
+  onEndGameTransitionsComplete 
+}: ResultsScreenProps) {
   const { currentRoom, socket, playAgain } = useSocket();
   const [results, setResults] = useState<GameResults | null>(propsResults || null);
   const [showFinalGuess, setShowFinalGuess] = useState(false);
@@ -22,7 +27,7 @@ export default function ResultsScreen({ gameState, results: propsResults }: Resu
   // NEW: Transition system state
   const [showTransitions, setShowTransitions] = useState(false);
   const [eliminatedPlayer, setEliminatedPlayer] = useState<Player | null>(null);
-  const [transitionsTriggered, setTransitionsTriggered] = useState(false); // PREVENT MULTIPLE TRIGGERS
+  const [transitionsTriggered, setTransitionsTriggered] = useState(false);
 
   const currentPlayer = currentRoom?.players.find((p: Player) => p.id === socket?.id);
   const isHost = currentPlayer?.isHost || false;
@@ -58,7 +63,7 @@ export default function ResultsScreen({ gameState, results: propsResults }: Resu
     if (gameState === 'finalGuess' && isImpostor && !showFinalGuess) {
       console.log('Auto-showing final guess interface for impostor');
       setShowFinalGuess(true);
-      setTimeLeft(30); // Default 30 seconds
+      setTimeLeft(30);
     }
   }, [gameState, isImpostor, showFinalGuess]);
 
@@ -93,7 +98,7 @@ export default function ResultsScreen({ gameState, results: propsResults }: Resu
           console.log('🔥 SOCKET Found eliminated player:', mostVoted.name);
           setEliminatedPlayer(mostVoted);
           setShowTransitions(true);
-          setTransitionsTriggered(true); // PREVENT FUTURE TRIGGERS
+          setTransitionsTriggered(true);
         } else {
           console.log('🔥 SOCKET No eliminated player found');
         }
@@ -129,7 +134,7 @@ export default function ResultsScreen({ gameState, results: propsResults }: Resu
           console.log('🟡 PROPS Found eliminated player:', mostVoted.name);
           setEliminatedPlayer(mostVoted);
           setShowTransitions(true);
-          setTransitionsTriggered(true); // PREVENT FUTURE TRIGGERS
+          setTransitionsTriggered(true);
         }
       } else {
         console.log('🟡 PROPS NOT triggering transitions - gameEnded:', propsResults.gameEnded, 'currentRoom:', !!currentRoom, 'showTransitions:', showTransitions, 'transitionsTriggered:', transitionsTriggered);
@@ -137,7 +142,7 @@ export default function ResultsScreen({ gameState, results: propsResults }: Resu
     }
   }, [propsResults, currentRoom, showTransitions, transitionsTriggered]);
 
-  // Countdown timer for final guess - FIXED: Split into two separate effects
+  // Countdown timer for final guess
   useEffect(() => {
     if (!showFinalGuess || timeLeft <= 0) return;
 
@@ -148,7 +153,7 @@ export default function ResultsScreen({ gameState, results: propsResults }: Resu
     return () => clearTimeout(timer);
   }, [showFinalGuess, timeLeft]);
 
-  // Separate useEffect for auto-submit when timer expires
+  // Auto-submit when timer expires
   useEffect(() => {
     if (showFinalGuess && timeLeft === 0 && socket && currentRoom) {
       console.log('Time up! Auto-submitting empty guess');
@@ -172,12 +177,18 @@ export default function ResultsScreen({ gameState, results: propsResults }: Resu
     playAgain();
   };
 
-  // NEW: Handle transition completion
+  // 🆕 UPDATED: Handle transition completion and call parent callback
   const handleTransitionComplete = () => {
     console.log('🟢 Transitions completed, showing final results');
     console.log('🟢 Before: showTransitions =', showTransitions);
     setShowTransitions(false);
     console.log('🟢 After: showTransitions should be false');
+    
+    // 🆕 NEW: Notify parent component that transitions are complete
+    if (onEndGameTransitionsComplete) {
+      console.log('🟢 Calling parent callback to update points');
+      onEndGameTransitionsComplete();
+    }
   };
 
   if (!currentRoom || !results) {
@@ -207,7 +218,7 @@ export default function ResultsScreen({ gameState, results: propsResults }: Resu
     );
   }
 
-  // Final Guess Phase (unchanged - your existing logic)
+  // Final Guess Phase - Rest of your existing code remains the same...
   if (gameState === 'finalGuess' && showFinalGuess && isImpostor) {
     return (
       <div className="py-6">
@@ -265,7 +276,7 @@ export default function ResultsScreen({ gameState, results: propsResults }: Resu
     );
   }
 
-  // Waiting for final guess from impostor (unchanged - your existing logic)
+  // Waiting for final guess from impostor
   if (gameState === 'finalGuess' && !isImpostor) {
     const impostorPlayer = currentRoom?.players.find((p: Player) => p.isImpostor);
     
@@ -287,7 +298,7 @@ export default function ResultsScreen({ gameState, results: propsResults }: Resu
     );
   }
 
-  // Final Results - UPDATED LAYOUT
+  // Final Results - Rest of your existing results display code...
   return (
     <div className="py-6">
       <div className="text-center mb-8">
@@ -381,7 +392,7 @@ export default function ResultsScreen({ gameState, results: propsResults }: Resu
           </div>
         )}
 
-        {/* Winners & Points - Only show if game is finished and has points */}
+        {/* Winners & Points */}
         {gameState === 'finished' && results.points && (
           <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-lg p-6 mb-6">
             <div className="flex items-center justify-center mb-4">
@@ -410,64 +421,63 @@ export default function ResultsScreen({ gameState, results: propsResults }: Resu
           </div>
         )}
 
-       {/* Player Clues Summary Table */}
-{gameState === 'finished' && currentRoom.clues && (
-  <div className="bg-white/5 rounded-lg p-6 border border-white/10 mb-6">
-    <h3 className="text-xl font-semibold text-white mb-4">Player Clues Summary</h3>
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr>
-            <th className="text-left p-3 border-b border-white/20 text-white font-semibold">
-              Player
-            </th>
-            {[1, 2, 3, 4, 5].map((roundNum) => (
-              <th key={roundNum} className="text-center p-3 border-b border-white/20 text-white font-semibold min-w-24">
-                Round {roundNum}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {currentRoom.players.map((player) => {
-            // Get all clues for this player
-            const playerClues = currentRoom.clues?.filter((clue: any) => 
-              clue.playerId === player.id
-            ) || [];
-            
-            return (
-              <tr key={player.id} className="border-b border-white/10">
-                <td className="p-3">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
-                      {player.name.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="text-white font-medium">{player.name}</span>
-                    {player.isImpostor && (
-                      <span className="ml-2 text-red-400 text-sm">(Impostor)</span>
-                    )}
-                  </div>
-                </td>
-                {[1, 2, 3, 4, 5].map((roundNum) => {
-                  const roundClue = playerClues.find((c: any) => c.round === roundNum);
-                  return (
-                    <td key={roundNum} className="p-3 text-center">
-                      <span className="text-white text-sm">
-                        {roundClue?.clue || '-'}
-                      </span>
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  </div>
-)}
+        {/* Player Clues Summary Table */}
+        {gameState === 'finished' && currentRoom.clues && (
+          <div className="bg-white/5 rounded-lg p-6 border border-white/10 mb-6">
+            <h3 className="text-xl font-semibold text-white mb-4">Player Clues Summary</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    <th className="text-left p-3 border-b border-white/20 text-white font-semibold">
+                      Player
+                    </th>
+                    {[1, 2, 3, 4, 5].map((roundNum) => (
+                      <th key={roundNum} className="text-center p-3 border-b border-white/20 text-white font-semibold min-w-24">
+                        Round {roundNum}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentRoom.players.map((player) => {
+                    const playerClues = currentRoom.clues?.filter((clue: any) => 
+                      clue.playerId === player.id
+                    ) || [];
+                    
+                    return (
+                      <tr key={player.id} className="border-b border-white/10">
+                        <td className="p-3">
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
+                              {player.name.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="text-white font-medium">{player.name}</span>
+                            {player.isImpostor && (
+                              <span className="ml-2 text-red-400 text-sm">(Impostor)</span>
+                            )}
+                          </div>
+                        </td>
+                        {[1, 2, 3, 4, 5].map((roundNum) => {
+                          const roundClue = playerClues.find((c: any) => c.round === roundNum);
+                          return (
+                            <td key={roundNum} className="p-3 text-center">
+                              <span className="text-white text-sm">
+                                {roundClue?.clue || '-'}
+                              </span>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
-        {/* Play Again - Only show if game is completely finished */}
+        {/* Play Again */}
         {gameState === 'finished' && (
           <div className="text-center">
             {isHost ? (

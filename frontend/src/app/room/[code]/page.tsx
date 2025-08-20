@@ -15,7 +15,7 @@ import ClueSubmission from '@/components/game/ClueSubmission';
 import VotingInterface from '@/components/game/VotingInterface';
 import ResultsScreen from '@/components/game/ResultsScreen';
 import GameStartSequence from '@/components/game/GameStartSequence';
-import GeneralTransitions from '@/components/game/GeneralTransitions'; // 🆕 NEW: Import for vote transition
+import GeneralTransitions from '@/components/game/GeneralTransitions';
 
 export default function RoomPage() {
   const params = useParams();
@@ -30,6 +30,9 @@ export default function RoomPage() {
   const [showVoteTransition, setShowVoteTransition] = useState(false);
   const [voteTransitionTriggered, setVoteTransitionTriggered] = useState<string | null>(null);
   
+  // 🆕 NEW: EndGame transitions state for points delay
+  const [showEndGameTransitions, setShowEndGameTransitions] = useState(false);
+  
   // Socket actions
   const { 
     isConnected, 
@@ -41,7 +44,7 @@ export default function RoomPage() {
     submitVote,
     submitFinalGuess,
     playAgain,
-    currentRoom // 🆕 NEW: Get currentRoom directly for vote detection
+    currentRoom
   } = useSocket();
 
   // Clean game state from our updated hook
@@ -70,15 +73,23 @@ export default function RoomPage() {
     }
   }, [currentRoom?.gameState, playerRole, gameStartTriggered]);
 
-  // NEW: Reset GameStart state when game ends or restarts
+  // 🆕 NEW: Trigger EndGame transitions when game finishes
   useEffect(() => {
-    if (currentRoom?.gameState === 'waiting' || currentRoom?.gameState === 'finished') {
-      console.log('🔄 Game ended/reset, resetting GameStart state');
+    if (currentRoom?.gameState === 'finished' && gameResults && !showEndGameTransitions) {
+      console.log('🎬 Game finished, starting EndGame transitions (delaying points)');
+      setShowEndGameTransitions(true);
+    }
+  }, [currentRoom?.gameState, gameResults, showEndGameTransitions]);
+
+  // NEW: Reset all transition states when game ends or restarts
+  useEffect(() => {
+    if (currentRoom?.gameState === 'waiting') {
+      console.log('🔄 Game ended/reset, resetting all transition states');
       setShowGameStart(false);
       setGameStartTriggered(false);
-      // Reset vote transition state too
       setShowVoteTransition(false);
       setVoteTransitionTriggered(null);
+      setShowEndGameTransitions(false); // 🆕 Reset EndGame transitions
     }
   }, [currentRoom?.gameState]);
 
@@ -89,7 +100,6 @@ export default function RoomPage() {
     const majorityThreshold = Math.ceil(totalPlayers / 2);
     const transitionKey = `room-vote-${currentRoom.currentRound}`;
     
-    // 🔍 DEBUG: Log individual values (not objects)
     console.log('🔍 ROOM VOTE DEBUG VALUES:');
     console.log('  readyToVoteVotes:', readyToVoteVotes);
     console.log('  majorityThreshold:', majorityThreshold);
@@ -98,13 +108,11 @@ export default function RoomPage() {
     console.log('  transitionKey:', transitionKey);
     console.log('  voteTransitionTriggered:', voteTransitionTriggered);
     
-    // 🔧 FIXED: Detect when we ENTER voting phase (not while in decision)
     const shouldTrigger = currentRoom.gamePhase === 'voting' && 
                          currentRoom.gameState === 'voting' && 
                          voteTransitionTriggered !== transitionKey;
     console.log('  shouldTrigger:', shouldTrigger);
     
-    // Trigger when we detect voting phase has started
     if (shouldTrigger) {
       console.log('🎯 ROOM LEVEL: Voting phase detected - showing transition');
       setShowVoteTransition(true);
@@ -116,6 +124,12 @@ export default function RoomPage() {
   const handleVoteTransitionComplete = () => {
     console.log('🏁 Vote transition completed at room level');
     setShowVoteTransition(false);
+  };
+
+  // 🆕 NEW: Handle EndGame transitions completion
+  const handleEndGameTransitionsComplete = () => {
+    console.log('🏁 EndGame transitions completed, showing final points');
+    setShowEndGameTransitions(false);
   };
 
   // Event handlers
@@ -184,7 +198,11 @@ export default function RoomPage() {
               </div>
             )}
             
-            <PlayerList players={currentRoom.players} />
+            {/* 🆕 PlayerList with points delay */}
+            <PlayerList 
+              players={currentRoom.players} 
+              delayPointsUpdate={showEndGameTransitions}
+            />
           </div>
 
           <div className="lg:col-span-3">
@@ -217,8 +235,6 @@ export default function RoomPage() {
         );
 
       case 'playing':
-        // 🔧 LOADING STATE: Show loading until GameStart system is ready
-        // This prevents the flash of game UI before GameStart triggers
         if (!playerRole || !gameStartTriggered) {
           return (
             <div className="flex items-center justify-center h-96">
@@ -244,7 +260,6 @@ export default function RoomPage() {
           );
         }
 
-        // Show GameStart sequence (gameStartTriggered = true, showGameStart = true)
         if (showGameStart) {
           return (
             <GameStartSequence
@@ -254,34 +269,48 @@ export default function RoomPage() {
           );
         }
 
-        // Show normal game UI (gameStartTriggered = true, showGameStart = false)
         return (
-          <div>
-            <ClueSubmission
-              currentRound={currentRoom.currentRound}
-              maxRounds={currentRoom.maxRounds}
-              isImpostor={playerRole.isImpostor}
-              hasSubmittedClue={hasSubmittedClue}
-              clues={(currentRoom.clues as any) || []}
-              isHost={isHost}
-              totalPlayers={totalPlayers}
-              onSubmitClue={handleSubmitClue}
-            />
-          </div>
+          <ClueSubmission
+            currentRound={currentRoom.currentRound}
+            maxRounds={currentRoom.maxRounds}
+            isImpostor={playerRole.isImpostor}
+            hasSubmittedClue={hasSubmittedClue}
+            clues={(currentRoom.clues as any) || []}
+            isHost={isHost}
+            totalPlayers={totalPlayers}
+            onSubmitClue={handleSubmitClue}
+          />
         );
 
       case 'voting':
         return <VotingInterface />;
 
       case 'finalGuess':
-        // If we have final game results, show finished screen instead
         if (gameResults?.gameEnded) {
-          return <ResultsScreen gameState="finished" results={gameResults} />;
+          return (
+            <ResultsScreen 
+              gameState="finished" 
+              results={gameResults}
+              onEndGameTransitionsComplete={handleEndGameTransitionsComplete}
+            />
+          );
         }
-        return <ResultsScreen gameState="finalGuess" results={gameResults} />;
+        return (
+          <ResultsScreen 
+            gameState="finalGuess" 
+            results={gameResults}
+            onEndGameTransitionsComplete={handleEndGameTransitionsComplete}
+          />
+        );
 
       case 'finished':
-        return <ResultsScreen gameState="finished" results={gameResults} />;
+        return (
+          <ResultsScreen 
+            gameState="finished" 
+            results={gameResults}
+            onEndGameTransitionsComplete={handleEndGameTransitionsComplete}
+          />
+        );
 
       default:
         return (
@@ -308,8 +337,8 @@ export default function RoomPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
-          {/* Role Display - Always visible in sidebar */}
-          {playerRole && (
+          {/* Role Display - Show only after GameStart completes */}
+          {playerRole && !showGameStart && (
             <div className="mb-4">
               <RoleDisplay
                 isImpostor={playerRole.isImpostor}
@@ -319,7 +348,11 @@ export default function RoomPage() {
             </div>
           )}
           
-          <PlayerList players={currentRoom.players} />
+          {/* 🆕 PlayerList with points delay */}
+          <PlayerList 
+            players={currentRoom.players} 
+            delayPointsUpdate={showEndGameTransitions}
+          />
         </div>
 
         <div className="lg:col-span-3">
