@@ -21,7 +21,7 @@ export const WORD_BANK: WordPair[] = [
   { word: "Jarvan", category: "Frontline" },                     // positioning
   { word: "Jhin", category: "Recommended Item: Infinity Edge" }, // item
   { word: "KSante", category: "Cost ≥ 3" },                      // cost tier
-  { word: "Katarina", category: "Backline" },                    // positioning
+  { word: "Katarina", category: "Backline access" },                    // positioning
   { word: "Kayle", category: "AP" },                             // damage type
   { word: "Kennen", category: "Bruiser" },                       // archetype (protector, sorcerer—tank/support)
   { word: "Lux", category: "Recommended Item: Jeweled Gauntlet" },  // item
@@ -30,7 +30,7 @@ export const WORD_BANK: WordPair[] = [
   { word: "Neeko", category: "Frontline" },                      // positioning
   { word: "Poppy", category: "Bruiser" },                        // archetype
   { word: "Rakan", category: "Support" },                        // archetype
-  { word: "Rell", category: "Backline" },                        // positioning
+  { word: "Rell", category: "Frontline" },                        // positioning
   { word: "Ryze", category: "Recommended Item: Rabadons Deathcap" }, // item
   { word: "Samira", category: "AD" },                            // damage type
   { word: "Senna", category: "Cost ≥ 3" },                       // cost tier
@@ -49,6 +49,31 @@ export const WORD_BANK: WordPair[] = [
   { word: "Xin Zhao", category: "Tank" },                     // archetype
   { word: "Yasuo", category: "Backline access" },                       // positioning
   { word: "Yone", category: "Bruiser" },                              // damage type
+
+  // Augments
+{ word: "Trade Sector", category: "Augment - Econ (2-1)" },
+{ word: "Clear Mind", category: "Augment - Gold (2-1)" },
+{ word: "Prismatic Ticket", category: "Augment - Econ (2-1, 3-2)" },
+{ word: "Call to Chaos", category: "Augment - Prismatic (4-2)" },
+{ word: "Pandora’s Bench", category: "Augment - Econ (2-1, 3-2)" },
+{ word: "Birthday Present", category: "Augment - Prismatic (2-1)" },
+{ word: "Level Up!", category: "Augment - Econ (2-1)" },
+
+{ word: "Second Wind", category: "Augment - Combat (2-1, 3-2, 4-2)" },
+{ word: "Thrill of the Hunt", category: "Augment - Combat (2-1, 3-2, 4-2)" },
+{ word: "Tiny Titans", category: "Augment - Combat (2-1)" },
+{ word: "Stand United", category: "Augment - Combat (3-2, 4-2)" },
+{ word: "High End Shopping", category: "Augment - Combat (2-1, 3-2)" },
+
+{ word: "Radiant Relics", category: "Augment - Prismatic (2-1, 3-2, 4-2)" },
+{ word: "Portable Forge", category: "Augment - Items (2-1, 3-2, 4-2)" },
+{ word: "Pandora’s Items", category: "Augment - Items (2-1, 3-2, 4-2)" },
+{ word: "Item Grab Bag", category: "Augment - Items (3-2, 4-2)" },
+{ word: "Lucky Gloves", category: "Augment - Prismatic (2-1, 3-2, 4-2)" },
+{ word: "Salvage Bin", category: "Augment - Items (2-1, 3-2, 4-2)" },
+{ word: "Worth The Wait", category: "Augment - Prismatic (2-1)" },
+{ word: "Golemify", category: "Augment - Gold (3-2)" },
+
 
   // TFT Set 15 Items
   // { word: "Guinsoos Rageblade", category: "Set 15 Item" },
