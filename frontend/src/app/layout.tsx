@@ -20,10 +20,8 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <SocketProvider>
-          <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-600">
-            <main className="container mx-auto px-4 py-8">
-              {children}
-            </main>
+          <div className="min-h-screen bg-[var(--bg-primary)]">
+            {children}
           </div>
         </SocketProvider>
       </body>
