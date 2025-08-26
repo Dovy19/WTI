@@ -13,117 +13,220 @@ import {
   GameResults 
 } from '../../../shared/types';
 
-const SocketContext = createContext<SocketContextType | undefined>(undefined);
+// Connection states
+type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'failed' | 'reconnecting';
+
+// Enhanced SocketContextType
+interface EnhancedSocketContextType extends SocketContextType {
+  connectionState: ConnectionState;
+  connectionError: string | null;
+  retryConnection: () => void;
+  cancelConnection: () => void;
+}
+
+const SocketContext = createContext<EnhancedSocketContextType | undefined>(undefined);
 
 export function SocketProvider({ children }: { children: ReactNode }) {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected');
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [retryAttempts, setRetryAttempts] = useState(0);
+  
   const [currentRoom, setCurrentRoom] = useState<GameRoom | null>(null);
   const [playerRole, setPlayerRole] = useState<RoleAssignment | null>(null);
-  
-  // NEW: Timer and game state
   const [currentTimer, setCurrentTimer] = useState<TimerUpdate | null>(null);
   const [gameResults, setGameResults] = useState<GameResults | null>(null);
 
-  useEffect(() => {
-    // Connect to backend
-    const newSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'https://wti-q8dr.onrender.com');
-    
-    newSocket.on('connect', () => {
-      console.log('Connected to server');
-      setIsConnected(true);
+  const createConnection = () => {
+    if (socket) {
+      socket.disconnect();
+    }
+
+    setConnectionState('connecting');
+    setConnectionError(null);
+
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://wti-q8dr.onrender.com';
+    const newSocket = io(socketUrl, {
+      timeout: 15000, // 15 second connection timeout for free servers
+      reconnection: false, // Handle reconnection manually
     });
 
-    newSocket.on('disconnect', () => {
-      console.log('Disconnected from server');
+    // Connection successful
+    newSocket.on('connect', () => {
+      console.log('Socket connected successfully');
+      setConnectionState('connected');
+      setIsConnected(true);
+      setConnectionError(null);
+      setRetryAttempts(0);
+      setSocket(newSocket);
+    });
+
+    // Connection failed
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection failed:', error);
+      setConnectionState('failed');
+      setIsConnected(false);
+      setConnectionError(getErrorMessage(error));
+      newSocket.disconnect();
+    });
+
+    // Connection timeout
+    setTimeout(() => {
+      if (connectionState === 'connecting') {
+        console.error('Socket connection timeout');
+        setConnectionState('failed');
+        setIsConnected(false);
+        setConnectionError('Connection timeout - server may be starting up (this can take 30-60 seconds on free hosting)');
+        newSocket.disconnect();
+      }
+    }, 15000);
+
+    // Disconnected unexpectedly
+    newSocket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
+      setConnectionState('disconnected');
       setIsConnected(false);
       setCurrentRoom(null);
       setCurrentTimer(null);
+      setSocket(null);
+      
+      // Auto-retry for unexpected disconnections (but not manual disconnects)
+      if (reason === 'io server disconnect' || reason === 'transport close') {
+        if (retryAttempts < 3) {
+          setTimeout(() => {
+            retryConnection();
+          }, 2000 * (retryAttempts + 1)); // Exponential backoff
+        }
+      }
     });
 
+    // Set up all your existing event listeners
+    setupGameEventListeners(newSocket);
+
+    return newSocket;
+  };
+
+  const setupGameEventListeners = (socket: Socket) => {
     // Listen for room updates
-    newSocket.on('roomUpdate', (room: GameRoom) => {
+    socket.on('roomUpdate', (room: GameRoom) => {
       console.log('Room updated:', room);
       setCurrentRoom(room);
     });
 
     // Listen for role assignments
-    newSocket.on('roleAssignment', (role: RoleAssignment) => {
+    socket.on('roleAssignment', (role: RoleAssignment) => {
       console.log('Role assigned:', role);
       setPlayerRole(role);
     });
 
-    // NEW: Listen for timer updates
-    newSocket.on('timerUpdate', (timerData: TimerUpdate) => {
+    // Listen for timer updates
+    socket.on('timerUpdate', (timerData: TimerUpdate) => {
       console.log('Timer update:', timerData);
       setCurrentTimer(timerData);
     });
 
-    // NEW: Listen for round completion
-    newSocket.on('roundComplete', (data: RoundComplete) => {
+    // Listen for round completion
+    socket.on('roundComplete', (data: RoundComplete) => {
       console.log(`Round ${data.round} complete:`, data.clues);
-      // You can add additional UI feedback here if needed
     });
 
     // Listen for voting phase
-    newSocket.on('votingPhase', () => {
+    socket.on('votingPhase', () => {
       console.log('Voting phase started!');
-      setCurrentTimer(null); // Clear decision timer
+      setCurrentTimer(null);
     });
 
     // Listen for errors
-    newSocket.on('error', (error: { message: string }) => {
+    socket.on('error', (error: { message: string }) => {
       console.error('Game error:', error.message);
-      // You can add toast notifications here
     });
 
     // Listen for voting results
-    newSocket.on('votingResults', (results: any) => {
+    socket.on('votingResults', (results: any) => {
       console.log('Voting results:', results);
       setGameResults(results);
     });
 
     // Listen for final guess prompt
-    newSocket.on('finalGuessPrompt', (data: { secretWord: string; timeLimit: number }) => {
+    socket.on('finalGuessPrompt', (data: { secretWord: string; timeLimit: number }) => {
       console.log('Final guess prompt:', data);
-      // Timer will be handled by ResultsScreen component
     });
 
     // Listen for game results
-    newSocket.on('gameResults', (results: GameResults) => {
+    socket.on('gameResults', (results: GameResults) => {
       console.log('Game results:', results);
       setGameResults(results);
-      setCurrentTimer(null); // Clear any active timers
+      setCurrentTimer(null);
     });
+  };
 
-    setSocket(newSocket);
+  const retryConnection = () => {
+    setRetryAttempts(prev => prev + 1);
+    setConnectionState('reconnecting');
+    setTimeout(() => {
+      createConnection();
+    }, 1000);
+  };
 
-    // Cleanup on unmount
+  const cancelConnection = () => {
+    if (socket) {
+      socket.disconnect();
+    }
+    setConnectionState('disconnected');
+    setIsConnected(false);
+    setConnectionError(null);
+    setRetryAttempts(0);
+    setCurrentRoom(null);
+    setPlayerRole(null);
+    setCurrentTimer(null);
+    setGameResults(null);
+  };
+
+  const getErrorMessage = (error: any): string => {
+    if (error.message?.includes('timeout')) {
+      return 'Server is taking too long to respond. It may be starting up (can take 30-60 seconds on free hosting).';
+    }
+    if (error.message?.includes('ECONNREFUSED')) {
+      return 'Cannot connect to server. Please try again in a moment.';
+    }
+    if (error.code === 'TRANSPORT_ERROR') {
+      return 'Network connection issue. Check your internet and try again.';
+    }
+    return 'Connection failed. The server may be starting up - please try again.';
+  };
+
+  // Initialize connection on mount
+  useEffect(() => {
+    createConnection();
+    
     return () => {
-      newSocket.close();
+      if (socket) {
+        socket.disconnect();
+      }
     };
   }, []);
 
+  // Game action functions
   const joinRoom = (playerName: string, roomCode: string) => {
-    if (socket) {
+    if (socket && connectionState === 'connected') {
       socket.emit('joinRoom', { playerName, roomCode });
     }
   };
 
   const createRoom = (playerName: string) => {
-    // Generate a random room code
     const roomCode = Math.random().toString(36).substr(2, 6).toUpperCase();
     joinRoom(playerName, roomCode);
   };
 
   const startGame = () => {
-    if (socket && currentRoom) {
+    if (socket && currentRoom && connectionState === 'connected') {
       socket.emit('startGame', { roomCode: currentRoom.code });
     }
   };
 
   const submitClue = (clue: string) => {
-    if (socket && currentRoom) {
+    if (socket && currentRoom && connectionState === 'connected') {
       socket.emit('submitClue', { clue, roomCode: currentRoom.code });
     }
   };
@@ -139,35 +242,35 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     voteNextRound();
   };
 
-  // NEW: Democratic voting functions
+  // Democratic voting functions
   const voteNextRound = () => {
-    if (socket && currentRoom) {
+    if (socket && currentRoom && connectionState === 'connected') {
       console.log('Voting for next round');
       socket.emit('voteNextRound', { roomCode: currentRoom.code });
     }
   };
 
   const voteReadyToVote = () => {
-    if (socket && currentRoom) {
+    if (socket && currentRoom && connectionState === 'connected') {
       console.log('Voting to go to voting phase');
       socket.emit('voteReadyToVote', { roomCode: currentRoom.code });
     }
   };
 
   const submitVote = (suspectedImpostorId: string) => {
-    if (socket && currentRoom) {
+    if (socket && currentRoom && connectionState === 'connected') {
       socket.emit('submitVote', { suspectedImpostorId, roomCode: currentRoom.code });
     }
   };
 
   const submitFinalGuess = (guess: string) => {
-    if (socket && currentRoom) {
+    if (socket && currentRoom && connectionState === 'connected') {
       socket.emit('submitFinalGuess', { guess, roomCode: currentRoom.code });
     }
   };
 
   const playAgain = () => {
-    if (socket && currentRoom) {
+    if (socket && currentRoom && connectionState === 'connected') {
       socket.emit('playAgain', { roomCode: currentRoom.code });
       // Reset local state
       setPlayerRole(null);
@@ -193,18 +296,22 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       value={{
         socket,
         isConnected,
+        connectionState,
+        connectionError,
+        retryConnection,
+        cancelConnection,
         currentRoom,
         playerRole,
-        currentTimer, // NEW: Expose timer data
-        gameResults, // NEW: Expose game results
+        currentTimer,
+        gameResults,
         joinRoom,
         createRoom,
         startGame,
         submitClue,
         readyToVote, // LEGACY
         nextRound, // LEGACY
-        voteNextRound, // NEW
-        voteReadyToVote, // NEW
+        voteNextRound,
+        voteReadyToVote,
         submitVote,
         submitFinalGuess,
         playAgain,

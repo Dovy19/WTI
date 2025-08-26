@@ -55,3 +55,11 @@ a[aria-disabled="true"],
 [data-testid*="click"] {
   cursor: pointer;
 }
+
+:root {
+  --bg-primary: #0f0f1a;
+  --bg-surface: #1a1a2e;
+  --purple-main: #9333ea;
+  --purple-hover: #a855f7;
+  --purple-soft: #c084fc;
+}

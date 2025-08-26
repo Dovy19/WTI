@@ -108,6 +108,10 @@ export interface SocketContextType {
   submitFinalGuess: (guess: string) => void;
   playAgain: () => void;
   leaveRoom: () => void;
+  connectionState: 'disconnected' | 'connecting' | 'connected' | 'failed' | 'reconnecting';
+  connectionError: string | null;
+  retryConnection: () => void;
+  cancelConnection: () => void;
 }
 
 // NEW: Timer configuration constants (can be imported by both frontend/backend)

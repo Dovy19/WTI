@@ -47,8 +47,8 @@ export function processVotingResults(roomCode: string, io: Server): void {
   console.log(`Impostor caught: ${impostorCaught}`);
 
   const results = {
-    voteCounts: voteCounts || {}, // FIXED: Always provide object, never undefined
-    voterNames: voterNames || {}, // FIXED: Always provide object, never undefined
+    voteCounts: voteCounts || {},
+    voterNames: voterNames || {},
     mostVotedPlayer: {
       id: mostVotedPlayer?.id,
       name: mostVotedPlayer?.name,
@@ -59,8 +59,8 @@ export function processVotingResults(roomCode: string, io: Server): void {
       name: impostor?.name
     },
     impostorCaught,
-    secretWord: room.secretWord || "", // FIXED: Always provide string
-    category: room.category || "" // FIXED: Always provide string
+    secretWord: room.secretWord || "",
+    category: room.category || ""
   };
 
   if (impostorCaught) {
@@ -83,16 +83,7 @@ export function processVotingResults(roomCode: string, io: Server): void {
         
         room.gameState = 'finished';
         
-        // NEW: Award points to detectives for successful vote
-        room.players.forEach(player => {
-          if (!player.isImpostor) {
-            player.points = (player.points || 0) + 2; // Detectives get 2 points
-            console.log(`Awarded 2 points to ${player.name} (detective win) - Total: ${player.points}`);
-          } else {
-            console.log(`No points for ${player.name} (impostor failed final guess)`);
-          }
-        });
-        
+        // Send results immediately (starts transitions)
         const finalResults = {
           ...results,
           impostorGuess: '',
@@ -107,27 +98,30 @@ export function processVotingResults(roomCode: string, io: Server): void {
         
         io.to(roomCode).emit('gameResults', finalResults);
         
-        // FIXED: Add delay to ensure points are processed
+        // FIXED: Delay point awarding until after transitions complete (35 seconds)
         setTimeout(() => {
+          console.log('Awarding points after transitions complete...');
+          
+          // Award points to detectives for successful vote
+          room.players.forEach(player => {
+            if (!player.isImpostor) {
+              player.points = (player.points || 0) + 2; // Detectives get 2 points
+              console.log(`Awarded 2 points to ${player.name} (detective win) - Total: ${player.points}`);
+            } else {
+              console.log(`No points for ${player.name} (impostor failed final guess)`);
+            }
+          });
+          
           io.to(roomCode).emit('roomUpdate', room);
-          console.log('Updated room sent with points:', room.players.map(p => `${p.name}: ${p.points}`));
-        }, 100);
+          console.log('Updated room sent with points after transitions:', room.players.map(p => `${p.name}: ${p.points}`));
+        }, 35000); // Wait 35 seconds for transitions to complete
       }
     }, 35000); // 35 seconds buffer
   } else {
     // Impostor survived - they win
     room.gameState = 'finished';
     
-    // NEW: Award points to impostor for successful deception
-    room.players.forEach(player => {
-      if (player.isImpostor) {
-        player.points = (player.points || 0) + 2; // Impostor gets 2 points
-        console.log(`Awarded 2 points to ${player.name} (impostor win) - Total: ${player.points}`);
-      } else {
-        console.log(`No points for ${player.name} (detectives failed)`);
-      }
-    });
-    
+    // Send results immediately (starts transitions)
     const finalResults = {
       ...results,
       gameEnded: true,
@@ -140,11 +134,23 @@ export function processVotingResults(roomCode: string, io: Server): void {
     
     io.to(roomCode).emit('gameResults', finalResults);
     
-    // FIXED: Add delay to ensure points are processed
+    // FIXED: Delay point awarding until after transitions complete (35 seconds)
     setTimeout(() => {
+      console.log('Awarding points after transitions complete...');
+      
+      // Award points to impostor for successful deception
+      room.players.forEach(player => {
+        if (player.isImpostor) {
+          player.points = (player.points || 0) + 2; // Impostor gets 2 points
+          console.log(`Awarded 2 points to ${player.name} (impostor win) - Total: ${player.points}`);
+        } else {
+          console.log(`No points for ${player.name} (detectives failed)`);
+        }
+      });
+      
       io.to(roomCode).emit('roomUpdate', room);
-      console.log('Updated room sent with points:', room.players.map(p => `${p.name}: ${p.points}`));
-    }, 100);
+      console.log('Updated room sent with points after transitions:', room.players.map(p => `${p.name}: ${p.points}`));
+    }, 35000); // Wait 35 seconds for transitions to complete
   }
 }
 
@@ -187,30 +193,6 @@ export function processFinalGuess(
   console.log(`Final guess "${guess}" vs secret word "${room.secretWord}" - Correct: ${correctGuess}`);
   
   room.gameState = 'finished';
-  
-  // FIXED: Award points based on final guess result
-  console.log('Starting point award process...');
-  room.players.forEach(player => {
-    console.log(`Processing player ${player.name}: isImpostor=${player.isImpostor}, currentPoints=${player.points || 0}`);
-    
-    if (correctGuess) {
-      // Tie - everyone gets 1 point
-      const oldPoints = player.points || 0;
-      player.points = oldPoints + 1;
-      console.log(`✅ Awarded 1 point to ${player.name} (tie) - ${oldPoints} → ${player.points}`);
-    } else {
-      // Detectives win - only they get 2 points
-      if (!player.isImpostor) {
-        const oldPoints = player.points || 0;
-        player.points = oldPoints + 2;
-        console.log(`✅ Awarded 2 points to ${player.name} (detective win) - ${oldPoints} → ${player.points}`);
-      } else {
-        console.log(`❌ No points for ${player.name} (impostor failed final guess)`);
-      }
-    }
-  });
-
-  console.log(`Players after point award:`, room.players.map(p => `${p.name}: ${p.points || 0} points`));
   
   // Rebuild voting data for final results
   const voteCounts = room.votes ? Object.fromEntries(
@@ -257,13 +239,38 @@ export function processFinalGuess(
   
   clearTimer(roomCode);
   
-  // Send results first, then updated room state
-  console.log('Sending game results...');
+  // Send results immediately (starts transitions)
+  console.log('Sending game results to start transitions...');
   io.to(roomCode).emit('gameResults', finalResults);
   
-  // Add delay to ensure points are processed, then send room update
+  // FIXED: Delay point awarding until after transitions complete (35 seconds)
   setTimeout(() => {
-    console.log('Sending room update with final points:', room.players.map(p => `${p.name}: ${p.points}`));
+    console.log('Awarding points after transitions complete...');
+    
+    // Award points based on final guess result
+    room.players.forEach(player => {
+      console.log(`Processing player ${player.name}: isImpostor=${player.isImpostor}, currentPoints=${player.points || 0}`);
+      
+      if (correctGuess) {
+        // Tie - everyone gets 1 point
+        const oldPoints = player.points || 0;
+        player.points = oldPoints + 1;
+        console.log(`Awarded 1 point to ${player.name} (tie) - ${oldPoints} → ${player.points}`);
+      } else {
+        // Detectives win - only they get 2 points
+        if (!player.isImpostor) {
+          const oldPoints = player.points || 0;
+          player.points = oldPoints + 2;
+          console.log(`Awarded 2 points to ${player.name} (detective win) - ${oldPoints} → ${player.points}`);
+        } else {
+          console.log(`No points for ${player.name} (impostor failed final guess)`);
+        }
+      }
+    });
+
+    console.log(`Players after point award:`, room.players.map(p => `${p.name}: ${p.points || 0} points`));
+    
     io.to(roomCode).emit('roomUpdate', room);
-  }, 100);
+    console.log('Updated room sent with points after transitions:', room.players.map(p => `${p.name}: ${p.points}`));
+  }, 35000); // Wait 35 seconds for transitions to complete
 }

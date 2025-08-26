@@ -1,4 +1,4 @@
-// src/app/room/[code]/page.tsx
+// src/app/room/[code]/page.tsx - Fixed hook ordering
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,26 +16,24 @@ import VotingInterface from '@/components/game/VotingInterface';
 import ResultsScreen from '@/components/game/ResultsScreen';
 import GameStartSequence from '@/components/game/GameStartSequence';
 import GeneralTransitions from '@/components/game/GeneralTransitions';
+import ConnectionStatus from '@/components/ui/ConnectionStatus';
 
 export default function RoomPage() {
   const params = useParams();
   const code = params.code as string;
   const router = useRouter();
   
-  // NEW: GameStart transition state
+  // ALL useState hooks must come first
   const [showGameStart, setShowGameStart] = useState(false);
   const [gameStartTriggered, setGameStartTriggered] = useState(false);
-  
-  // 🆕 NEW: Vote transition state
   const [showVoteTransition, setShowVoteTransition] = useState(false);
   const [voteTransitionTriggered, setVoteTransitionTriggered] = useState<string | null>(null);
-  
-  // 🆕 NEW: EndGame transitions state for points delay
   const [showEndGameTransitions, setShowEndGameTransitions] = useState(false);
   
-  // Socket actions
+  // ALL custom hooks must come next
   const { 
-    isConnected, 
+    isConnected,
+    connectionState,
     leaveRoom, 
     startGame, 
     submitClue, 
@@ -47,7 +45,6 @@ export default function RoomPage() {
     currentRoom
   } = useSocket();
 
-  // Clean game state from our updated hook
   const {
     playerRole,
     isHost,
@@ -56,83 +53,57 @@ export default function RoomPage() {
     gameResults,
     totalPlayers,
     currentPhase,
-    
-    // Democratic voting status  
     playerVotedNextRound,
     playerVotedToVote,
     nextRoundVotes,
     readyToVoteVotes
   } = useGameState();
 
-  // NEW: Trigger GameStart transitions when game begins
+  // ALL useEffect hooks must come before any conditional returns
   useEffect(() => {
     if (currentRoom?.gameState === 'playing' && playerRole && !gameStartTriggered) {
-      console.log('🚀 Game started, triggering GameStart sequence');
+      console.log('Game started, triggering GameStart sequence');
       setShowGameStart(true);
       setGameStartTriggered(true);
     }
   }, [currentRoom?.gameState, playerRole, gameStartTriggered]);
 
-  // 🆕 NEW: Trigger EndGame transitions when game finishes
   useEffect(() => {
     if (currentRoom?.gameState === 'finished' && gameResults && !showEndGameTransitions) {
-      console.log('🎬 Game finished, starting EndGame transitions (delaying points)');
+      console.log('Game finished, starting EndGame transitions (delaying points)');
       setShowEndGameTransitions(true);
     }
   }, [currentRoom?.gameState, gameResults, showEndGameTransitions]);
 
-  // NEW: Reset all transition states when game ends or restarts
   useEffect(() => {
     if (currentRoom?.gameState === 'waiting') {
-      console.log('🔄 Game ended/reset, resetting all transition states');
+      console.log('Game ended/reset, resetting all transition states');
       setShowGameStart(false);
       setGameStartTriggered(false);
       setShowVoteTransition(false);
       setVoteTransitionTriggered(null);
-      setShowEndGameTransitions(false); // 🆕 Reset EndGame transitions
+      setShowEndGameTransitions(false);
     }
   }, [currentRoom?.gameState]);
 
-  // 🆕 NEW: Detect "Ready to Vote" transition at room level
   useEffect(() => {
     if (!currentRoom) return;
     
     const majorityThreshold = Math.ceil(totalPlayers / 2);
     const transitionKey = `room-vote-${currentRoom.currentRound}`;
     
-    console.log('🔍 ROOM VOTE DEBUG VALUES:');
-    console.log('  readyToVoteVotes:', readyToVoteVotes);
-    console.log('  majorityThreshold:', majorityThreshold);
-    console.log('  gamePhase:', currentRoom.gamePhase);
-    console.log('  gameState:', currentRoom.gameState);
-    console.log('  transitionKey:', transitionKey);
-    console.log('  voteTransitionTriggered:', voteTransitionTriggered);
-    
     const shouldTrigger = currentRoom.gamePhase === 'voting' && 
                          currentRoom.gameState === 'voting' && 
                          voteTransitionTriggered !== transitionKey;
-    console.log('  shouldTrigger:', shouldTrigger);
     
     if (shouldTrigger) {
-      console.log('🎯 ROOM LEVEL: Voting phase detected - showing transition');
+      console.log('Voting phase detected - showing transition');
       setShowVoteTransition(true);
       setVoteTransitionTriggered(transitionKey);
     }
   }, [currentRoom?.gamePhase, currentRoom?.gameState, currentRoom?.currentRound, voteTransitionTriggered, readyToVoteVotes, totalPlayers]);
 
-  // 🆕 NEW: Handle vote transition completion
-  const handleVoteTransitionComplete = () => {
-    console.log('🏁 Vote transition completed at room level');
-    setShowVoteTransition(false);
-  };
-
-  // 🆕 NEW: Handle EndGame transitions completion
-  const handleEndGameTransitionsComplete = () => {
-    console.log('🏁 EndGame transitions completed, showing final points');
-    setShowEndGameTransitions(false);
-  };
-
-  // Event handlers
+  // Event handlers (these are just functions, not hooks)
   const handleLeaveRoom = () => {
     leaveRoom();
     router.push('/');
@@ -149,13 +120,29 @@ export default function RoomPage() {
     setHasSubmittedClue(true);
   };
 
-  // NEW: Handle GameStart completion
   const handleGameStartComplete = () => {
-    console.log('🏁 GameStart sequence completed');
+    console.log('GameStart sequence completed');
     setShowGameStart(false);
   };
 
-  // Loading state
+  const handleVoteTransitionComplete = () => {
+    console.log('Vote transition completed at room level');
+    setShowVoteTransition(false);
+  };
+
+  const handleEndGameTransitionsComplete = () => {
+    console.log('EndGame transitions completed, showing final points');
+    setShowEndGameTransitions(false);
+  };
+
+  // NOW conditional returns are allowed (all hooks have been called)
+  
+  // Show connection status overlay when not connected
+  if (connectionState !== 'connected') {
+    return <ConnectionStatus />;
+  }
+
+  // Show loading state while room data loads
   if (!currentRoom) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -163,18 +150,24 @@ export default function RoomPage() {
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
             <h2 className="text-xl font-semibold text-white mb-2">
-              Connecting to room...
+              Joining room...
             </h2>
             <p className="text-white/60">
               Room code: {code}
             </p>
+            <button
+            onClick={() => router.push('/')}
+            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+          >
+            Cancel & Go Back
+          </button>
           </div>
         </div>
       </div>
     );
   }
 
-  // 🆕 NEW: Show vote transition if active (before other game content)
+  // Show vote transition if active
   if (showVoteTransition) {
     return (
       <div className="max-w-6xl mx-auto">
@@ -187,7 +180,6 @@ export default function RoomPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-1">
-            {/* Role Display - Always visible in sidebar */}
             {playerRole && (
               <div className="mb-4">
                 <RoleDisplay
@@ -198,7 +190,6 @@ export default function RoomPage() {
               </div>
             )}
             
-            {/* 🆕 PlayerList with points delay */}
             <PlayerList 
               players={currentRoom.players} 
               delayPointsUpdate={showEndGameTransitions}
@@ -337,7 +328,6 @@ export default function RoomPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
-          {/* Role Display - Show only after GameStart completes */}
           {playerRole && !showGameStart && (
             <div className="mb-4">
               <RoleDisplay
@@ -348,7 +338,6 @@ export default function RoomPage() {
             </div>
           )}
           
-          {/* 🆕 PlayerList with points delay */}
           <PlayerList 
             players={currentRoom.players} 
             delayPointsUpdate={showEndGameTransitions}
