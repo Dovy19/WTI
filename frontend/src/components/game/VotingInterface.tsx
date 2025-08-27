@@ -4,10 +4,10 @@
 import { useState } from 'react';
 import { useSocket } from '@/contexts/SocketContext';
 import { Vote, Clock, Crown } from 'lucide-react';
-import TimerDisplay from '../ui/TimerDisplay'; // NEW: Add timer display
+import TimerDisplay from '../ui/TimerDisplay';
 
 export default function VotingInterface() {
-  const { currentRoom, submitVote, socket, currentTimer } = useSocket(); // NEW: Add currentTimer
+  const { currentRoom, submitVote, socket, currentTimer } = useSocket();
   const [selectedPlayer, setSelectedPlayer] = useState<string>('');
   const [hasVoted, setHasVoted] = useState(false);
 
@@ -29,7 +29,7 @@ export default function VotingInterface() {
 
   return (
     <div className="py-6">
-      {/* NEW: Timer Display */}
+      {/* Timer Display */}
       {currentTimer && (
         <TimerDisplay
           timeLeft={currentTimer.timeLeft}
@@ -40,23 +40,23 @@ export default function VotingInterface() {
 
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-white mb-2">
-          🗳️ Voting Phase
+          Voting Phase
         </h2>
-        <p className="text-white/80 text-lg mb-4">
+        <p className="text-[#9ca3af] text-lg mb-4">
           Who do you think is the impostor?
         </p>
         
         {/* Voting Progress */}
         <div className="flex items-center justify-center gap-2 mb-6">
-          <Clock className="w-5 h-5 text-white/60" />
-          <span className="text-white/60">
+          <Clock className="w-5 h-5 text-[#c084fc]" />
+          <span className="text-[#9ca3af]">
             {votesSubmitted} of {totalPlayers} votes submitted
           </span>
         </div>
 
-        <div className="w-full bg-white/10 rounded-full h-2 mb-6">
+        <div className="w-full bg-[#1a1a2e]/60 rounded-full h-2 mb-6 border border-[#9333ea]/20">
           <div 
-            className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+            className="bg-[#9333ea] h-2 rounded-full transition-all duration-500"
             style={{ width: `${(votesSubmitted / totalPlayers) * 100}%` }}
           />
         </div>
@@ -73,15 +73,15 @@ export default function VotingInterface() {
               <button
                 key={player.id}
                 onClick={() => setSelectedPlayer(player.id)}
-                className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                className={`p-4 rounded-lg border-2 transition-all duration-200 backdrop-blur-sm ${
                   selectedPlayer === player.id
                     ? 'border-red-400 bg-red-500/20'
-                    : 'border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10'
+                    : 'border-[#9333ea]/30 bg-[#1a1a2e]/40 hover:border-[#9333ea] hover:bg-[#9333ea]/10'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-semibold mr-4">
+                    <div className="w-10 h-10 bg-[#9333ea] rounded-full flex items-center justify-center text-white font-semibold mr-4 border border-[#c084fc]/40">
                       {player.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="text-left">
@@ -111,14 +111,14 @@ export default function VotingInterface() {
             <button
               onClick={handleVote}
               disabled={!selectedPlayer}
-              className="px-8 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold rounded-lg hover:from-red-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center mx-auto"
+              className="px-8 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center mx-auto"
             >
               <Vote className="w-5 h-5 mr-2" />
               Vote to Eliminate
             </button>
             
             {selectedPlayer && (
-              <p className="text-white/60 text-sm mt-2">
+              <p className="text-[#9ca3af] text-sm mt-2">
                 You are voting for: <span className="text-white font-medium">
                   {otherPlayers.find(p => p.id === selectedPlayer)?.name}
                 </span>
@@ -128,31 +128,31 @@ export default function VotingInterface() {
         </div>
       ) : (
         <div className="text-center">
-          <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-6 mb-6">
+          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6 mb-6 backdrop-blur-sm">
             <h3 className="text-xl font-semibold text-green-300 mb-2">
-              ✓ Vote Submitted!
+              Vote Submitted!
             </h3>
-            <p className="text-white/80">
+            <p className="text-[#9ca3af]">
               You voted for: <span className="text-white font-medium">
                 {otherPlayers.find(p => p.id === selectedPlayer)?.name}
               </span>
             </p>
           </div>
           
-          <div className="text-white/60">
+          <div className="text-[#9ca3af]">
             <p>Waiting for other players to vote...</p>
             <div className="flex justify-center mt-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white/60"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#9333ea]"></div>
             </div>
           </div>
         </div>
       )}
 
       {/* Show current game info */}
-      <div className="mt-8 p-4 bg-white/5 rounded-lg border border-white/10">
-        <p className="text-white/60 text-sm text-center">
-          <span className="font-medium">Secret Word:</span> {currentRoom.secretWord} • 
-          <span className="font-medium"> Category:</span> {currentRoom.category}
+      <div className="mt-8 p-4 bg-[#1a1a2e]/40 backdrop-blur-sm rounded-lg border border-[#9333ea]/20">
+        <p className="text-[#9ca3af] text-sm text-center">
+          <span className="font-medium text-[#c084fc]">Secret Word:</span> {currentRoom.secretWord} • 
+          <span className="font-medium text-[#c084fc]"> Category:</span> {currentRoom.category}
         </p>
       </div>
     </div>

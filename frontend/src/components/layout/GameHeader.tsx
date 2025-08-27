@@ -12,11 +12,11 @@ interface GameHeaderProps {
 
 export default function GameHeader({ roomCode, isConnected, onLeaveRoom, onCopyCode }: GameHeaderProps) {
   return (
-    <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 shadow-2xl border border-white/20 mb-6">
+    <div className="bg-[#1a1a2e]/60 backdrop-blur-lg rounded-xl p-6 shadow-2xl border border-[#9333ea]/30 mb-6">
       <div className="flex items-center justify-between">
         <button
           onClick={onLeaveRoom}
-          className="flex items-center text-white/80 hover:text-white transition-colors"
+          className="flex items-center text-[#9ca3af] hover:text-white transition-colors"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
           Leave Room
@@ -40,7 +40,7 @@ export default function GameHeader({ roomCode, isConnected, onLeaveRoom, onCopyC
 
         <button
           onClick={onCopyCode}
-          className="flex items-center px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors"
+          className="flex items-center px-4 py-2 bg-[#9333ea]/20 hover:bg-[#9333ea]/30 text-[#c084fc] hover:text-white rounded-lg transition-colors border border-[#9333ea]/30"
         >
           <Copy className="w-4 h-4 mr-2" />
           Copy Code

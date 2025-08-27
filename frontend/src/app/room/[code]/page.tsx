@@ -1,10 +1,11 @@
-// src/app/room/[code]/page.tsx - Fixed hook ordering
+// src/app/room/[code]/page.tsx - Updated with design system & animated background
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useSocket } from '@/contexts/SocketContext';
 import { useGameState } from '@/hooks/useGameState';
+import { ArrowLeft, Copy, ArrowRight, Vote } from 'lucide-react';
 
 // Components
 import GameHeader from '@/components/layout/GameHeader';
@@ -42,7 +43,9 @@ export default function RoomPage() {
     submitVote,
     submitFinalGuess,
     playAgain,
-    currentRoom
+    currentRoom,
+    currentTimer,
+    socket
   } = useSocket();
 
   const {
@@ -135,6 +138,64 @@ export default function RoomPage() {
     setShowEndGameTransitions(false);
   };
 
+  // Animated Background Component
+  const AnimatedBackground = () => (
+    <div className="absolute inset-0 opacity-75">
+      <svg className="w-full h-full" viewBox="0 0 1200 800" preserveAspectRatio="none">
+        <defs>
+          {/* Gradient for the wave lines */}
+          <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#9333ea" stopOpacity="0.3" />
+            <stop offset="50%" stopColor="#c084fc" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#9333ea" stopOpacity="0.2" />
+          </linearGradient>
+        </defs>
+
+        {/* Wave Lines */}
+        {[
+          { id: 'wave1', d: 'M -100 200 Q 190 150 600 200 T 1200 200', opacity: 1 },
+          { id: 'wave2', d: 'M -100 350 Q 200 300 900 350 T 1200 350', opacity: 0.5 },
+          { id: 'wave3', d: 'M -100 500 Q 250 550 600 500 T 1200 500', opacity: 0.4 },
+        ].map((wave, idx) => (
+          <path
+            key={idx}
+            id={wave.id}
+            d={wave.d}
+            stroke="url(#lineGradient)"
+            strokeWidth="1.5"
+            fill="none"
+            opacity={wave.opacity}
+          />
+        ))}
+
+        {/* Particles */}
+        {[
+          { path: '#wave1', dur: '16s' },
+          { path: '#wave2', dur: '20s' },
+          { path: '#wave3', dur: '24s' },
+        ].map((particle, idx) => (
+          <polygon
+            key={idx}
+            points="0,-4 4,0 0,4 -4,0"
+            fill="#a855f7"
+            stroke="black"
+            strokeWidth="0.5"
+            opacity="0.8"
+          >
+            <animateMotion
+              dur={particle.dur}
+              repeatCount="indefinite"
+              begin="1s"
+              rotate="auto"
+            >
+              <mpath href={particle.path} />
+            </animateMotion>
+          </polygon>
+        ))}
+      </svg>
+    </div>
+  );
+
   // NOW conditional returns are allowed (all hooks have been called)
   
   // Show connection status overlay when not connected
@@ -145,22 +206,26 @@ export default function RoomPage() {
   // Show loading state while room data loads
   if (!currentRoom) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8 shadow-2xl border border-white/20">
+      <div 
+        className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
+        style={{ backgroundColor: '#0f0f1a' }}
+      >
+        <AnimatedBackground />
+        <div className="bg-[#1a1a2e]/60 backdrop-blur-lg rounded-xl p-8 shadow-2xl border border-[#9333ea]/30 relative z-10">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#9333ea] mx-auto mb-4"></div>
             <h2 className="text-xl font-semibold text-white mb-2">
               Joining room...
             </h2>
-            <p className="text-white/60">
+            <p className="text-[#9ca3af]">
               Room code: {code}
             </p>
             <button
-            onClick={() => router.push('/')}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-          >
-            Cancel & Go Back
-          </button>
+              onClick={() => router.push('/')}
+              className="mt-4 px-4 py-2 bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors"
+            >
+              Cancel & Go Back
+            </button>
           </div>
         </div>
       </div>
@@ -170,41 +235,47 @@ export default function RoomPage() {
   // Show vote transition if active
   if (showVoteTransition) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <GameHeader
-          roomCode={currentRoom.code}
-          isConnected={isConnected}
-          onLeaveRoom={handleLeaveRoom}
-          onCopyCode={handleCopyCode}
-        />
+      <div 
+        className="min-h-screen relative overflow-hidden"
+        style={{ backgroundColor: '#0f0f1a' }}
+      >
+        <AnimatedBackground />
+        <div className="max-w-6xl mx-auto relative z-10">
+          <GameHeader
+            roomCode={currentRoom.code}
+            isConnected={isConnected}
+            onLeaveRoom={handleLeaveRoom}
+            onCopyCode={handleCopyCode}
+          />
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1">
-            {playerRole && (
-              <div className="mb-4">
-                <RoleDisplay
-                  isImpostor={playerRole.isImpostor}
-                  category={playerRole.category}
-                  word={playerRole.word}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-1">
+              {playerRole && (
+                <div className="mb-4">
+                  <RoleDisplay
+                    isImpostor={playerRole.isImpostor}
+                    category={playerRole.category}
+                    word={playerRole.word}
+                  />
+                </div>
+              )}
+              
+              <PlayerList 
+                players={currentRoom.players} 
+                delayPointsUpdate={showEndGameTransitions}
+              />
+            </div>
+
+            <div className="lg:col-span-3">
+              <div className="bg-[#1a1a2e]/60 backdrop-blur-lg rounded-xl p-6 shadow-2xl border border-[#9333ea]/30 h-full">
+                <GeneralTransitions
+                  transitionType="ready-to-vote"
+                  currentRound={currentRoom.currentRound}
+                  nextRound={currentRoom.currentRound + 1}
+                  maxRounds={currentRoom.maxRounds}
+                  onComplete={handleVoteTransitionComplete}
                 />
               </div>
-            )}
-            
-            <PlayerList 
-              players={currentRoom.players} 
-              delayPointsUpdate={showEndGameTransitions}
-            />
-          </div>
-
-          <div className="lg:col-span-3">
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 shadow-2xl border border-white/20 h-full">
-              <GeneralTransitions
-                transitionType="ready-to-vote"
-                currentRound={currentRoom.currentRound}
-                nextRound={currentRoom.currentRound + 1}
-                maxRounds={currentRoom.maxRounds}
-                onComplete={handleVoteTransitionComplete}
-              />
             </div>
           </div>
         </div>
@@ -230,18 +301,18 @@ export default function RoomPage() {
           return (
             <div className="flex items-center justify-center h-96">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-6"></div>
+                <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#9333ea] border-t-transparent mx-auto mb-6"></div>
                 <h2 className="text-2xl font-bold text-white mb-2">
                   Starting Game...
                 </h2>
-                <p className="text-white/60">
+                <p className="text-[#9ca3af]">
                   Assigning roles and preparing everything
                 </p>
                 <div className="mt-4 flex justify-center space-x-1">
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"
+                      className="w-2 h-2 bg-[#c084fc] rounded-full animate-pulse"
                       style={{ animationDelay: `${i * 0.2}s` }}
                     />
                   ))}
@@ -309,7 +380,7 @@ export default function RoomPage() {
             <h2 className="text-2xl font-bold text-white mb-4">
               Game Starting Soon...
             </h2>
-            <p className="text-white/60">
+            <p className="text-[#9ca3af]">
               Get ready to find the impostor!
             </p>
           </div>
@@ -318,35 +389,223 @@ export default function RoomPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <GameHeader
-        roomCode={currentRoom.code}
-        isConnected={isConnected}
-        onLeaveRoom={handleLeaveRoom}
-        onCopyCode={handleCopyCode}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-1">
-          {playerRole && !showGameStart && (
-            <div className="mb-4">
-              <RoleDisplay
-                isImpostor={playerRole.isImpostor}
-                category={playerRole.category}
-                word={playerRole.word}
-              />
+    <div 
+      className="h-screen flex relative overflow-hidden"
+      style={{ backgroundColor: '#0f0f1a' }}
+    >
+      <AnimatedBackground />
+      
+      {/* Left Sidebar - Timer + Players */}
+      <div className="w-1/4 p-4 relative z-10 flex flex-col">
+        {/* Timer Section */}
+        <div className="bg-[#1a1a2e]/60 backdrop-blur-lg rounded-xl p-6 shadow-2xl border border-[#9333ea]/30 mb-4">
+          <div className="flex items-center mb-3">
+            <div className="w-2 h-2 bg-[#c084fc] rounded-full mr-2"></div>
+            <h3 className="text-[#c084fc] font-medium">Game Status</h3>
+          </div>
+          
+          {/* Display actual timer or fallback */}
+          {currentTimer ? (
+            <div className="text-center">
+              <div className="text-4xl font-bold text-[#c084fc] mb-2">
+                {Math.floor(currentTimer.timeLeft / 60)}:{(currentTimer.timeLeft % 60).toString().padStart(2, '0')}
+              </div>
+              <div className="text-[#9ca3af] text-sm">
+                {currentTimer.phase === 'writing' ? 'Writing Phase' : 
+                 currentTimer.phase === 'decision' ? 'Review & Decide' : 
+                 currentTimer.phase === 'voting' ? 'Voting Phase' : 
+                 currentTimer.phase}
+              </div>
+              <div className="text-[#9ca3af] text-xs mt-1">
+                Round {currentRoom.currentRound || 1}/{currentRoom.maxRounds || 5}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center">
+              <div className="text-2xl font-bold text-[#c084fc] mb-2">
+                Game Active
+              </div>
+              <div className="text-[#9ca3af] text-sm">
+                Round {currentRoom.currentRound || 1}/{currentRoom.maxRounds || 5}
+              </div>
             </div>
           )}
-          
+        </div>
+
+        {/* Players List */}
+        <div className="flex-1">
           <PlayerList 
             players={currentRoom.players} 
             delayPointsUpdate={showEndGameTransitions}
           />
         </div>
+      </div>
 
-        <div className="lg:col-span-3">
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 shadow-2xl border border-white/20 h-full">
+      {/* Main Content Area */}
+      <div className="flex-1 p-4 relative z-10">
+        <div className="bg-[#1a1a2e]/60 backdrop-blur-lg rounded-xl shadow-2xl border border-[#9333ea]/30 h-full flex flex-col">
+          {/* Header with room code */}
+          <div className="p-4 border-b border-[#9333ea]/20">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={handleLeaveRoom}
+                className="flex items-center text-[#9ca3af] hover:text-white transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Leave Room
+              </button>
+              
+              <h1 className="text-xl font-bold text-white">
+                Room {currentRoom.code}
+              </h1>
+
+              <button
+                onClick={handleCopyCode}
+                className="flex items-center px-3 py-1.5 bg-[#9333ea]/20 hover:bg-[#9333ea]/30 text-[#c084fc] hover:text-white rounded-lg transition-colors border border-[#9333ea]/30 text-sm"
+              >
+                <Copy className="w-3 h-3 mr-2" />
+                Copy
+              </button>
+            </div>
+          </div>
+
+          {/* Main game content */}
+          <div className="flex-1 p-6 overflow-auto">
             {renderGameContent()}
+          </div>
+        </div>
+      </div>
+
+      {/* Right Sidebar - Role + Actions */}
+      <div className="w-1/4 p-4 relative z-10 flex flex-col">
+        {/* Role Display */}
+        {playerRole && !showGameStart && (
+          <div className="mb-4">
+            <div className="bg-[#1a1a2e]/60 backdrop-blur-lg rounded-xl p-4 shadow-2xl border border-[#9333ea]/30">
+              <div className="flex items-center mb-3">
+                <div className="w-6 h-6 bg-[#9333ea] rounded-full flex items-center justify-center mr-2">
+                  <div className="w-3 h-3 bg-white rounded-full"></div>
+                </div>
+                <h3 className="text-white font-medium">Your Role</h3>
+              </div>
+              
+              <div className="text-center">
+                <div className={`px-4 py-2 rounded-lg font-bold text-sm ${
+                  playerRole.isImpostor 
+                    ? 'bg-red-500/20 text-red-300 border border-red-500/30' 
+                    : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                }`}>
+                  {playerRole.isImpostor ? 'Impostor' : 'Detective'}
+                </div>
+                
+                {playerRole.isImpostor && playerRole.category && (
+                  <div className="mt-2 text-xs text-[#9ca3af]">
+                    Category: {playerRole.category}
+                  </div>
+                )}
+                
+                {!playerRole.isImpostor && playerRole.word && (
+                  <div className="mt-2 text-xs text-[#9ca3af]">
+                    Word: {playerRole.word}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Actions Panel */}
+        <div className="bg-[#1a1a2e]/60 backdrop-blur-lg rounded-xl p-4 shadow-2xl border border-[#9333ea]/30">
+          <h3 className="text-white font-medium mb-4">Actions</h3>
+          
+          <div className="space-y-3">
+            {/* Democratic voting buttons - only show during decision phase */}
+            {currentRoom.gameState === 'playing' && currentRoom.gamePhase === 'decision' && (
+              <>
+                <button 
+                  onClick={voteNextRound}
+                  disabled={currentRoom?.readyToVoteVotes?.includes(socket?.id || '')}
+                  className={`w-full px-4 py-3 rounded-lg transition-colors font-medium text-sm ${
+                    currentRoom?.nextRoundVotes?.includes(socket?.id || '')
+                      ? 'bg-[#9333ea]/30 text-[#c084fc] border-2 border-[#9333ea]'
+                      : 'bg-[#9333ea] hover:bg-[#a855f7] text-white disabled:opacity-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-center">
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                    Next Round
+                  </div>
+                  <div className="text-xs opacity-80 mt-1">
+                    Continue to Round {(currentRoom.currentRound || 1) + 1}
+                  </div>
+                  {currentRoom?.nextRoundVotes?.includes(socket?.id || '') && (
+                    <div className="text-xs text-[#c084fc] mt-1">You voted</div>
+                  )}
+                </button>
+
+                <button 
+                  onClick={voteReadyToVote}
+                  disabled={currentRoom?.nextRoundVotes?.includes(socket?.id || '')}
+                  className={`w-full px-4 py-3 rounded-lg transition-colors font-medium text-sm ${
+                    currentRoom?.readyToVoteVotes?.includes(socket?.id || '')
+                      ? 'bg-red-500/30 text-red-300 border-2 border-red-400'
+                      : 'bg-red-500/20 hover:bg-red-500/30 text-red-300 hover:text-red-200 border border-red-500/30 disabled:opacity-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-center">
+                    <Vote className="w-4 h-4 mr-2" />
+                    Vote Now
+                  </div>
+                  <div className="text-xs opacity-80 mt-1">
+                    Skip to voting phase
+                  </div>
+                  {currentRoom?.readyToVoteVotes?.includes(socket?.id || '') && (
+                    <div className="text-xs text-red-300 mt-1">You voted</div>
+                  )}
+                </button>
+
+                {/* Voting Progress */}
+                <div className="bg-[#1a1a2e]/60 backdrop-blur-sm rounded-lg p-3 border border-[#9333ea]/20 mt-4">
+                  <div className="text-center">
+                    <div className="text-[#9ca3af] text-xs mb-2">Decision Progress:</div>
+                    <div className="grid grid-cols-2 gap-2 text-center">
+                      <div>
+                        <div className="text-[#c084fc] font-semibold text-sm">
+                          {currentRoom?.nextRoundVotes?.length || 0}
+                        </div>
+                        <div className="text-[#9ca3af] text-xs">Next Round</div>
+                      </div>
+                      <div>
+                        <div className="text-red-300 font-semibold text-sm">
+                          {currentRoom?.readyToVoteVotes?.length || 0}
+                        </div>
+                        <div className="text-[#9ca3af] text-xs">Vote Now</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+            
+            {/* Status message when not in decision phase */}
+            {currentRoom.gameState === 'playing' && currentRoom.gamePhase !== 'decision' && (
+              <div className="bg-[#1a1a2e]/40 rounded-lg p-3 border border-[#9333ea]/20">
+                <p className="text-[#9ca3af] text-sm text-center">
+                  Actions available during review phase
+                </p>
+              </div>
+            )}
+
+            {/* Always show Leave Room */}
+            <button
+              onClick={handleLeaveRoom}
+              className="w-full px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 hover:text-red-200 rounded-lg transition-colors border border-red-500/30 font-medium"
+            >
+              <div className="flex items-center justify-center">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Leave Room
+              </div>
+            </button>
           </div>
         </div>
       </div>

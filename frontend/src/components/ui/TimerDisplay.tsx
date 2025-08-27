@@ -25,17 +25,17 @@ export default function TimerDisplay({ timeLeft, phase, className = '' }: TimerD
   const isUrgent = timeLeft <= 30;
   const isCritical = timeLeft <= 10;
 
-  // Phase-specific styling
+  // Phase-specific styling with purple theme
   const getPhaseColor = () => {
     switch (phase) {
       case 'writing':
-        return 'from-blue-500 to-cyan-500';
+        return 'bg-[#9333ea]';
       case 'decision':
-        return 'from-yellow-500 to-orange-500';
+        return 'bg-[#c084fc]';
       case 'voting':
-        return 'from-red-500 to-pink-500';
+        return 'bg-red-500';
       default:
-        return 'from-gray-500 to-gray-600';
+        return 'bg-[#9333ea]';
     }
   };
 
@@ -50,15 +50,15 @@ export default function TimerDisplay({ timeLeft, phase, className = '' }: TimerD
   };
 
   return (
-    <div className={`bg-white/10 backdrop-blur-lg rounded-lg p-4 border border-white/20 ${className}`}>
+    <div className={`bg-[#1a1a2e]/60 backdrop-blur-lg rounded-lg p-4 border border-[#9333ea]/30 ${className}`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center">
           {isCritical ? (
             <AlertTriangle className="w-5 h-5 text-red-400 mr-2 animate-pulse" />
           ) : (
-            <Clock className="w-5 h-5 text-white/80 mr-2" />
+            <Clock className="w-5 h-5 text-[#c084fc] mr-2" />
           )}
-          <span className="text-white/80 text-sm font-medium">
+          <span className="text-[#9ca3af] text-sm font-medium">
             {PHASE_LABELS[phase]}
           </span>
         </div>
@@ -73,9 +73,9 @@ export default function TimerDisplay({ timeLeft, phase, className = '' }: TimerD
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full bg-white/20 rounded-full h-2 mb-2">
+      <div className="w-full bg-[#1a1a2e]/60 rounded-full h-2 mb-2 border border-[#9333ea]/20">
         <div 
-          className={`h-2 rounded-full transition-all duration-1000 bg-gradient-to-r ${getPhaseColor()} ${
+          className={`h-2 rounded-full transition-all duration-1000 ${getPhaseColor()} ${
             isCritical ? 'animate-pulse' : ''
           }`}
           style={{ width: `${getProgressPercentage()}%` }}
@@ -83,7 +83,7 @@ export default function TimerDisplay({ timeLeft, phase, className = '' }: TimerD
       </div>
 
       {/* Phase Description */}
-      <div className="text-white/60 text-xs text-center">
+      <div className="text-[#9ca3af] text-xs text-center">
         {phase === 'writing' && 'Submit your clue'}
         {phase === 'decision' && 'Discuss and vote on next action'}
         {phase === 'voting' && 'Vote for the impostor'}
@@ -94,7 +94,7 @@ export default function TimerDisplay({ timeLeft, phase, className = '' }: TimerD
         <div className={`mt-2 text-center text-xs ${
           isCritical ? 'text-red-300' : 'text-yellow-300'
         }`}>
-          {isCritical ? '⚠️ Time almost up!' : '⏰ Hurry up!'}
+          {isCritical ? 'Time almost up!' : 'Hurry up!'}
         </div>
       )}
     </div>

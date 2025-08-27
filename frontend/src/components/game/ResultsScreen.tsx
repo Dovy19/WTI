@@ -10,7 +10,7 @@ import TransitionSequence from './TransitionSequence';
 interface ResultsScreenProps {
   gameState: 'finalGuess' | 'finished';
   results?: GameResults | null;
-  onEndGameTransitionsComplete?: () => void; // 🆕 NEW: Callback for transition completion
+  onEndGameTransitionsComplete?: () => void;
 }
 
 export default function ResultsScreen({ 
@@ -24,7 +24,7 @@ export default function ResultsScreen({
   const [finalGuess, setFinalGuess] = useState('');
   const [timeLeft, setTimeLeft] = useState(30);
   
-  // NEW: Transition system state
+  // Transition system state
   const [showTransitions, setShowTransitions] = useState(false);
   const [eliminatedPlayer, setEliminatedPlayer] = useState<Player | null>(null);
   const [transitionsTriggered, setTransitionsTriggered] = useState(false);
@@ -51,7 +51,7 @@ export default function ResultsScreen({
   // Reset transition state when game starts over
   useEffect(() => {
     if (currentRoom?.gameState === 'waiting' || currentRoom?.gameState === 'playing') {
-      console.log('🔄 Game restarted, resetting transition state');
+      console.log('Game restarted, resetting transition state');
       setShowTransitions(false);
       setTransitionsTriggered(false);
       setEliminatedPlayer(null);
@@ -82,28 +82,28 @@ export default function ResultsScreen({
     };
 
     const handleGameResults = (data: GameResults) => {
-      console.log('🔥 SOCKET Game results received:', data);
-      console.log('🔥 Current showTransitions state:', showTransitions);
+      console.log('SOCKET Game results received:', data);
+      console.log('Current showTransitions state:', showTransitions);
       setResults(data);
       setShowFinalGuess(false);
       
-      // NEW: Trigger transitions when we get final results
+      // Trigger transitions when we get final results
       if (data.gameEnded && currentRoom && !showTransitions && !transitionsTriggered) {
-        console.log('🔥 SOCKET triggering transitions - showTransitions was:', showTransitions);
+        console.log('SOCKET triggering transitions - showTransitions was:', showTransitions);
         const mostVoted = currentRoom.players.find((p: Player) => 
           p.id === data.mostVotedPlayer?.id
         );
         
         if (mostVoted) {
-          console.log('🔥 SOCKET Found eliminated player:', mostVoted.name);
+          console.log('SOCKET Found eliminated player:', mostVoted.name);
           setEliminatedPlayer(mostVoted);
           setShowTransitions(true);
           setTransitionsTriggered(true);
         } else {
-          console.log('🔥 SOCKET No eliminated player found');
+          console.log('SOCKET No eliminated player found');
         }
       } else {
-        console.log('🔥 SOCKET NOT triggering transitions - gameEnded:', data.gameEnded, 'currentRoom:', !!currentRoom, 'showTransitions:', showTransitions, 'transitionsTriggered:', transitionsTriggered);
+        console.log('SOCKET NOT triggering transitions - gameEnded:', data.gameEnded, 'currentRoom:', !!currentRoom, 'showTransitions:', showTransitions, 'transitionsTriggered:', transitionsTriggered);
       }
     };
 
@@ -119,25 +119,25 @@ export default function ResultsScreen({
   // Update results when props change
   useEffect(() => {
     if (propsResults) {
-      console.log('🟡 PROPS results received:', propsResults);
-      console.log('🟡 Current showTransitions state:', showTransitions);
+      console.log('PROPS results received:', propsResults);
+      console.log('Current showTransitions state:', showTransitions);
       setResults(propsResults);
       
-      // NEW: Also trigger transitions for props results if game ended
+      // Also trigger transitions for props results if game ended
       if (propsResults.gameEnded && currentRoom && !showTransitions && !transitionsTriggered) {
-        console.log('🟡 PROPS triggering transitions - showTransitions was:', showTransitions);
+        console.log('PROPS triggering transitions - showTransitions was:', showTransitions);
         const mostVoted = currentRoom.players.find((p: Player) => 
           p.id === propsResults.mostVotedPlayer?.id
         );
         
         if (mostVoted) {
-          console.log('🟡 PROPS Found eliminated player:', mostVoted.name);
+          console.log('PROPS Found eliminated player:', mostVoted.name);
           setEliminatedPlayer(mostVoted);
           setShowTransitions(true);
           setTransitionsTriggered(true);
         }
       } else {
-        console.log('🟡 PROPS NOT triggering transitions - gameEnded:', propsResults.gameEnded, 'currentRoom:', !!currentRoom, 'showTransitions:', showTransitions, 'transitionsTriggered:', transitionsTriggered);
+        console.log('PROPS NOT triggering transitions - gameEnded:', propsResults.gameEnded, 'currentRoom:', !!currentRoom, 'showTransitions:', showTransitions, 'transitionsTriggered:', transitionsTriggered);
       }
     }
   }, [propsResults, currentRoom, showTransitions, transitionsTriggered]);
@@ -177,16 +177,16 @@ export default function ResultsScreen({
     playAgain();
   };
 
-  // 🆕 UPDATED: Handle transition completion and call parent callback
+  // Handle transition completion and call parent callback
   const handleTransitionComplete = () => {
-    console.log('🟢 Transitions completed, showing final results');
-    console.log('🟢 Before: showTransitions =', showTransitions);
+    console.log('Transitions completed, showing final results');
+    console.log('Before: showTransitions =', showTransitions);
     setShowTransitions(false);
-    console.log('🟢 After: showTransitions should be false');
+    console.log('After: showTransitions should be false');
     
-    // 🆕 NEW: Notify parent component that transitions are complete
+    // Notify parent component that transitions are complete
     if (onEndGameTransitionsComplete) {
-      console.log('🟢 Calling parent callback to update points');
+      console.log('Calling parent callback to update points');
       onEndGameTransitionsComplete();
     }
   };
@@ -194,18 +194,18 @@ export default function ResultsScreen({
   if (!currentRoom || !results) {
     return (
       <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#9333ea] mx-auto mb-4"></div>
         <h2 className="text-xl font-semibold text-white">
           Processing results...
         </h2>
-        <div className="text-xs text-white/50 mt-4">
+        <div className="text-xs text-[#9ca3af] mt-4">
           Debug: gameState={gameState}, isImpostor={isImpostor}, showFinalGuess={showFinalGuess}
         </div>
       </div>
     );
   }
 
-  // NEW: Show transitions instead of immediate results when game is finished
+  // Show transitions instead of immediate results when game is finished
   if (showTransitions && results && eliminatedPlayer && gameState === 'finished') {
     console.log('Rendering transition sequence');
     return (
@@ -218,24 +218,24 @@ export default function ResultsScreen({
     );
   }
 
-  // Final Guess Phase - Rest of your existing code remains the same...
+  // Final Guess Phase
   if (gameState === 'finalGuess' && showFinalGuess && isImpostor) {
     return (
       <div className="py-6">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-red-300 mb-4">
-            🎭 You've Been Caught!
+            You've Been Caught!
           </h2>
-          <p className="text-white/80 text-lg mb-2">
+          <p className="text-[#9ca3af] text-lg mb-2">
             But you have one last chance to redeem yourself...
           </p>
           <p className="text-white mb-6">
             Guess the secret word to earn points for everyone!
           </p>
           
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6 backdrop-blur-sm">
             <div className="text-red-300 text-2xl font-bold mb-2">
-              ⏰ {timeLeft} seconds left
+              {timeLeft} seconds left
             </div>
             <div className="w-full bg-red-500/20 rounded-full h-2">
               <div 
@@ -247,7 +247,7 @@ export default function ResultsScreen({
         </div>
 
         <div className="max-w-md mx-auto">
-          <label className="block text-white/80 text-sm font-medium mb-2">
+          <label className="block text-[#9ca3af] text-sm font-medium mb-2">
             Your Final Guess:
           </label>
           <div className="flex gap-2">
@@ -256,19 +256,19 @@ export default function ResultsScreen({
               value={finalGuess}
               onChange={(e) => setFinalGuess(e.target.value)}
               placeholder="Enter the secret word..."
-              className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-red-400"
+              className="flex-1 px-4 py-3 bg-[#1a1a2e]/60 border border-[#9333ea]/30 rounded-lg text-white placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#9333ea] backdrop-blur-sm"
               onKeyPress={(e) => e.key === 'Enter' && handleFinalGuess()}
               disabled={timeLeft === 0}
             />
             <button
               onClick={handleFinalGuess}
               disabled={timeLeft === 0}
-              className="px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold rounded-lg hover:from-red-600 hover:to-pink-600 disabled:opacity-50 transition-all duration-200"
+              className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg disabled:opacity-50 transition-all duration-200"
             >
               Guess!
             </button>
           </div>
-          <p className="text-white/40 text-xs mt-2">
+          <p className="text-[#9ca3af] text-xs mt-2">
             Category: {currentRoom.category}
           </p>
         </div>
@@ -283,43 +283,43 @@ export default function ResultsScreen({
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-white mb-4">
-          ⏰ Final Guess Time!
+          Final Guess Time!
         </h2>
-        <p className="text-white/80 mb-6">
+        <p className="text-[#9ca3af] mb-6">
           <span className="font-medium text-red-300">{impostorPlayer?.name || 'The impostor'}</span> has been caught!
         </p>
-        <p className="text-white/60 mb-8">
+        <p className="text-[#9ca3af] mb-8">
           They have 30 seconds to guess the secret word for redemption...
         </p>
         <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white/60"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#9333ea]"></div>
         </div>
       </div>
     );
   }
 
-  // Final Results - Rest of your existing results display code...
+  // Final Results
   return (
     <div className="py-6">
       <div className="text-center mb-8">
         <h2 className="text-4xl font-bold text-white mb-6">
-          🎉 Game Results
+          Game Results
         </h2>
 
         {/* Voting Results + Truth Revealed in 2 columns */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Voting Results */}
           {results.voteCounts && (
-            <div className="bg-white/5 rounded-lg p-6 border border-white/10">
+            <div className="bg-[#1a1a2e]/40 backdrop-blur-sm rounded-lg p-6 border border-[#9333ea]/20">
               <h3 className="text-xl font-semibold text-white mb-4">Voting Results</h3>
               <div className="space-y-3">
                 {Object.entries(results.voteCounts).map(([playerId, count]) => {
                   const player = currentRoom.players.find((p: Player) => p.id === playerId);
                   const voters = results.voterNames?.[playerId] || [];
                   return (
-                    <div key={playerId} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <div key={playerId} className="flex items-center justify-between p-3 bg-[#1a1a2e]/60 backdrop-blur-sm rounded-lg">
                       <div className="flex items-center">
-                        <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
+                        <div className="w-8 h-8 bg-[#9333ea] rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3 border border-[#c084fc]/40">
                           {player?.name.charAt(0).toUpperCase()}
                         </div>
                         <span className="text-white font-medium">{player?.name}</span>
@@ -329,7 +329,7 @@ export default function ResultsScreen({
                       </div>
                       <div className="text-right">
                         <div className="text-white font-bold">{count} vote{count !== 1 ? 's' : ''}</div>
-                        <div className="text-white/60 text-xs">
+                        <div className="text-[#9ca3af] text-xs">
                           {voters.join(', ')}
                         </div>
                       </div>
@@ -342,22 +342,22 @@ export default function ResultsScreen({
 
           {/* Truth Revealed */}
           {results.impostor && results.mostVotedPlayer && (
-            <div className="bg-gradient-to-r from-red-500/10 to-pink-500/10 border border-red-500/20 rounded-lg p-6">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-6 backdrop-blur-sm">
               <h3 className="text-xl font-semibold text-white mb-4">The Truth Revealed</h3>
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="text-center">
-                  <p className="text-white/80 mb-2">The Impostor Was:</p>
+                  <p className="text-[#9ca3af] mb-2">The Impostor Was:</p>
                   <div className="flex items-center justify-center">
-                    <div className="w-10 h-10 bg-gradient-to-r from-red-400 to-pink-400 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                    <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-semibold mr-3">
                       {results.impostor.name?.charAt(0).toUpperCase()}
                     </div>
                     <span className="text-red-300 font-bold text-lg">{results.impostor.name}</span>
                   </div>
                 </div>
                 <div className="text-center">
-                  <p className="text-white/80 mb-2">Most Voted:</p>
+                  <p className="text-[#9ca3af] mb-2">Most Voted:</p>
                   <div className="flex items-center justify-center">
-                    <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-semibold mr-3">
+                    <div className="w-10 h-10 bg-[#9333ea] rounded-full flex items-center justify-center text-white font-semibold mr-3">
                       {results.mostVotedPlayer.name?.charAt(0).toUpperCase()}
                     </div>
                     <span className="text-white font-bold text-lg">{results.mostVotedPlayer.name}</span>
@@ -365,11 +365,11 @@ export default function ResultsScreen({
                 </div>
               </div>
               
-              <div className="p-3 bg-white/10 rounded-lg">
-                <p className="text-white/80">
-                  <span className="font-medium">Secret Word:</span> {results.secretWord || currentRoom.secretWord}
+              <div className="p-3 bg-[#1a1a2e]/60 backdrop-blur-sm rounded-lg">
+                <p className="text-[#9ca3af]">
+                  <span className="font-medium text-[#c084fc]">Secret Word:</span> {results.secretWord || currentRoom.secretWord}
                   <br />
-                  <span className="font-medium">Impostor was given the category:</span> {results.category || currentRoom.category}
+                  <span className="font-medium text-[#c084fc]">Impostor was given the category:</span> {results.category || currentRoom.category}
                 </p>
               </div>
             </div>
@@ -378,15 +378,15 @@ export default function ResultsScreen({
 
         {/* Final Guess Results (if applicable) */}
         {results.impostorGuess !== undefined && (
-          <div className="bg-white/5 rounded-lg p-4 border border-white/10 mb-6">
+          <div className="bg-[#1a1a2e]/40 backdrop-blur-sm rounded-lg p-4 border border-[#9333ea]/20 mb-6">
             <h4 className="text-lg font-semibold text-white mb-2">Final Guess</h4>
-            <p className="text-white/80">
+            <p className="text-[#9ca3af]">
               <span className="font-medium">{currentRoom.players.find((p: Player) => p.isImpostor)?.name || 'The impostor'}</span> guessed: 
               <span className="font-bold mx-2">"{results.impostorGuess}"</span>
               {results.correctGuess ? (
-                <span className="text-green-400">✓ CORRECT!</span>
+                <span className="text-green-400">CORRECT!</span>
               ) : (
-                <span className="text-red-400">✗ WRONG</span>
+                <span className="text-red-400">WRONG</span>
               )}
             </p>
           </div>
@@ -394,9 +394,9 @@ export default function ResultsScreen({
 
         {/* Winners & Points */}
         {gameState === 'finished' && results.points && (
-          <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-lg p-6 mb-6">
+          <div className="bg-[#c084fc]/10 border border-[#c084fc]/30 rounded-lg p-6 mb-6 backdrop-blur-sm">
             <div className="flex items-center justify-center mb-4">
-              <Trophy className="w-8 h-8 text-yellow-400 mr-3" />
+              <Trophy className="w-8 h-8 text-[#c084fc] mr-3" />
               <h3 className="text-2xl font-semibold text-white">
                 {results.winners === 'impostor' && 'Impostor Wins!'}
                 {results.winners === 'detectives' && 'Detectives Win!'}
@@ -409,13 +409,13 @@ export default function ResultsScreen({
                 <div className="text-3xl font-bold text-red-300 mb-1">
                   +{results.points.impostorPoints}
                 </div>
-                <p className="text-white/80">Impostor Points</p>
+                <p className="text-[#9ca3af]">Impostor Points</p>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-blue-300 mb-1">
                   +{results.points.detectivePoints}
                 </div>
-                <p className="text-white/80">Detective Points</p>
+                <p className="text-[#9ca3af]">Detective Points</p>
               </div>
             </div>
           </div>
@@ -423,17 +423,17 @@ export default function ResultsScreen({
 
         {/* Player Clues Summary Table */}
         {gameState === 'finished' && currentRoom.clues && (
-          <div className="bg-white/5 rounded-lg p-6 border border-white/10 mb-6">
+          <div className="bg-[#1a1a2e]/40 backdrop-blur-sm rounded-lg p-6 border border-[#9333ea]/20 mb-6">
             <h3 className="text-xl font-semibold text-white mb-4">Player Clues Summary</h3>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
                   <tr>
-                    <th className="text-left p-3 border-b border-white/20 text-white font-semibold">
+                    <th className="text-left p-3 border-b border-[#9333ea]/30 text-white font-semibold">
                       Player
                     </th>
                     {[1, 2, 3, 4, 5].map((roundNum) => (
-                      <th key={roundNum} className="text-center p-3 border-b border-white/20 text-white font-semibold min-w-24">
+                      <th key={roundNum} className="text-center p-3 border-b border-[#9333ea]/30 text-white font-semibold min-w-24">
                         Round {roundNum}
                       </th>
                     ))}
@@ -446,10 +446,10 @@ export default function ResultsScreen({
                     ) || [];
                     
                     return (
-                      <tr key={player.id} className="border-b border-white/10">
+                      <tr key={player.id} className="border-b border-[#9333ea]/20">
                         <td className="p-3">
                           <div className="flex items-center">
-                            <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
+                            <div className="w-8 h-8 bg-[#9333ea] rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
                               {player.name.charAt(0).toUpperCase()}
                             </div>
                             <span className="text-white font-medium">{player.name}</span>
@@ -483,13 +483,13 @@ export default function ResultsScreen({
             {isHost ? (
               <button
                 onClick={handlePlayAgain}
-                className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 flex items-center mx-auto"
+                className="px-8 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-all duration-200 flex items-center mx-auto"
               >
                 <RotateCcw className="w-5 h-5 mr-2" />
                 Play Again
               </button>
             ) : (
-              <p className="text-white/60">
+              <p className="text-[#9ca3af]">
                 Waiting for host to start next game...
               </p>
             )}

@@ -29,9 +29,9 @@ export default function PlayerList({ players, delayPointsUpdate = false }: Playe
   }, []); // Only run once on mount
 
   return (
-    <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 shadow-2xl border border-white/20">
+    <div className="bg-[#1a1a2e]/60 backdrop-blur-lg rounded-xl p-6 shadow-2xl border border-[#9333ea]/30">
       <div className="flex items-center mb-4">
-        <Users className="w-5 h-5 text-white mr-2" />
+        <Users className="w-5 h-5 text-[#c084fc] mr-2" />
         <h2 className="text-lg font-semibold text-white">
           Players ({players.length})
         </h2>
@@ -41,10 +41,10 @@ export default function PlayerList({ players, delayPointsUpdate = false }: Playe
         {displayPlayers.map((player) => (
           <div
             key={player.id}
-            className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10"
+            className="flex items-center justify-between p-3 bg-[#1a1a2e]/40 rounded-lg border border-[#9333ea]/20"
           >
             <div className="flex items-center">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3">
+              <div className="w-8 h-8 bg-[#9333ea] rounded-full flex items-center justify-center text-white font-semibold text-sm mr-3 border border-[#c084fc]/40">
                 {player.name.charAt(0).toUpperCase()}
               </div>
               <div>
@@ -58,8 +58,8 @@ export default function PlayerList({ players, delayPointsUpdate = false }: Playe
                 </div>
                 {/* Points Display - Shows old points during transitions */}
                 <div className="flex items-center mt-1">
-                  <Trophy className="w-3 h-3 text-yellow-400 mr-1" />
-                  <span className="text-yellow-400 text-xs font-medium">
+                  <Trophy className="w-3 h-3 text-[#c084fc] mr-1" />
+                  <span className="text-[#c084fc] text-xs font-medium">
                     {player.points || 0} points
                   </span>
                 </div>
@@ -70,8 +70,8 @@ export default function PlayerList({ players, delayPointsUpdate = false }: Playe
       </div>
 
       {players.length < 3 && (
-        <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-          <p className="text-yellow-300 text-sm text-center">
+        <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg backdrop-blur-sm">
+          <p className="text-amber-300 text-sm text-center">
             Need at least 3 players to start
           </p>
         </div>
@@ -79,8 +79,8 @@ export default function PlayerList({ players, delayPointsUpdate = false }: Playe
 
       {/* Points Leaderboard - Also uses display players */}
       {displayPlayers.some(p => (p.points || 0) > 0) && (
-        <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/10">
-          <h3 className="text-white/80 text-sm font-medium mb-2 text-center">
+        <div className="mt-4 p-3 bg-[#1a1a2e]/40 rounded-lg border border-[#9333ea]/20 backdrop-blur-sm">
+          <h3 className="text-[#c084fc] text-sm font-medium mb-2 text-center">
             🏆 Session Leaderboard
           </h3>
           <div className="space-y-1">
@@ -97,9 +97,9 @@ export default function PlayerList({ players, delayPointsUpdate = false }: Playe
                     }`}>
                       {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
                     </span>
-                    <span className="text-white/80">{player.name}</span>
+                    <span className="text-[#9ca3af]">{player.name}</span>
                   </div>
-                  <span className="text-yellow-400 font-medium">
+                  <span className="text-[#c084fc] font-medium">
                     {player.points || 0}
                   </span>
                 </div>
