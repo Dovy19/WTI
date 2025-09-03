@@ -48,7 +48,7 @@ export const WORD_GROUPS: CategoryGroup[] = [
           { word: "Katarina", category: "Backline access" },
           { word: "Kayle", category: "AP" },
           { word: "Kennen", category: "Bruiser" },
-          { word: "Lux", category: "Recommended Item: Jeweled Gauntlet" },
+          { word: "Lux", category: "Recommended Item: Jeweled Gauntlet Cost ≤ 3" },
           { word: "Malphite", category: "Cost ≤ 3" },
           { word: "Malzahar", category: "AP" },
           { word: "Neeko", category: "Frontline" },
@@ -63,16 +63,16 @@ export const WORD_GROUPS: CategoryGroup[] = [
           { word: "Sivir", category: "AD" },
           { word: "Swain", category: "Recommended Item: Gargoyle" },
           { word: "Syndra", category: "Recommended Item: Archangel" },
-          { word: "Twisted Fate", category: "Backline" },
+          { word: "Twisted Fate", category: "Mixed damage" },
           { word: "Udyr", category: "Bruiser" },
           { word: "Varus", category: "Recommended Item: Last Whisper" },
           { word: "Vi", category: "Cost ≤ 3" },
-          { word: "Viego", category: "AD" },
+          { word: "Viego", category: "Underused" },
           { word: "Volibear", category: "Frontline" },
           { word: "Xayah", category: "Recommended Item: Krakens Fury" },
           { word: "Xin Zhao", category: "Tank" },
           { word: "Yasuo", category: "Backline access" },
-          { word: "Yone", category: "Bruiser" }
+          { word: "Yone", category: "Underused" }
         ]
       },
       {
@@ -99,7 +99,9 @@ export const WORD_GROUPS: CategoryGroup[] = [
           { word: "Lucky Gloves", category: "Augment - Prismatic (2-1, 3-2, 4-2)" },
           { word: "Salvage Bin", category: "Augment - Items (2-1, 3-2, 4-2)" },
           { word: "Worth The Wait", category: "Augment - Prismatic (2-1)" },
-          { word: "Golemify", category: "Augment - Gold (3-2)" }
+          { word: "Golemify", category: "Augment - Gold (3-2)" },
+          { word: "Hedge Fund", category: "Augment - Econ (2-1)" },
+          { word: "Forward Thinking", category: "Augment - Gold (3-2)" }
         ]
       }
     ]
