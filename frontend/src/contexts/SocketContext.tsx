@@ -96,7 +96,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
         setConnectionError('Connection timeout - server may be starting up (this can take 30-60 seconds on free hosting)');
         newSocket.disconnect();
       }
-    }, 15000);
+    }, 85000);
 
     newSocket.on('disconnect', (reason) => {
       console.log('Socket disconnected:', reason);
