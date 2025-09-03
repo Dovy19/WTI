@@ -7,6 +7,25 @@ export interface Player {
   points?: number; // NEW: For persistent points across games
 }
 
+export interface CategoryGroup {
+  id: string;
+  name: string;
+  description?: string;
+  categories: WordCategory[];
+}
+
+export interface WordCategory {
+  id: string;
+  name: string;
+  description: string;
+  words: WordPair[];
+}
+
+export interface WordPair {
+  word: string;
+  category: string;
+}
+
 export interface GameRoom {
   code: string;
   players: Player[];
@@ -23,6 +42,8 @@ export interface GameRoom {
   currentRoundClues?: { [playerId: string]: string };
   nextRoundVotes: string[]; // NEW: Players who voted for next round
   readyToVoteVotes: string[]; // NEW: Players who voted to go to voting
+  selectedCategories: string[];
+  availableGroups: CategoryGroup[];
 }
 
 export interface JoinRoomData {

@@ -30,7 +30,7 @@ export function setupGameHandlers(socket: Socket, io: Server): void {
     });
 
     // Get random word and category
-    const wordPair = getRandomWord();
+    const wordPair = getRandomWord(room.selectedCategories);
     room.secretWord = wordPair.word;
     room.category = wordPair.category;
     

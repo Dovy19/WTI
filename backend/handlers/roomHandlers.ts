@@ -16,7 +16,7 @@ export function setupRoomHandlers(socket: Socket, io: Server): void {
     // Get or create room
     let room = gameRooms.get(roomCode);
     if (!room) {
-      room = createGameRoom(roomCode);
+      room = createGameRoom(roomCode); // 🔧 This function needs updating in gameState.ts
     }
     
     // Add player if not already in room
@@ -34,6 +34,29 @@ export function setupRoomHandlers(socket: Socket, io: Server): void {
     }
     
     // Send updated room state to all players in room
+    io.to(roomCode).emit('roomUpdate', room);
+  });
+
+  // 🔧 NEW: Handle category selection updates
+  socket.on('updateCategorySelection', ({ roomCode, categoryIds }: { roomCode: string; categoryIds: string[] }) => {
+    const room = gameRooms.get(roomCode);
+    if (!room) {
+      socket.emit('error', { message: 'Room not found' });
+      return;
+    }
+
+    // Check if the player is the host
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player?.isHost) {
+      socket.emit('error', { message: 'Only the host can change categories' });
+      return;
+    }
+
+    // Update selected categories
+    room.selectedCategories = categoryIds;
+    console.log(`Host updated categories in room ${roomCode}:`, categoryIds);
+
+    // Broadcast to all players in room
     io.to(roomCode).emit('roomUpdate', room);
   });
 

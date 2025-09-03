@@ -1,119 +1,203 @@
 // backend/wordBank.ts
+
 export interface WordPair {
   word: string;
   category: string;
 }
 
-export const WORD_BANK: WordPair[] = [
-  // Famous People
- { word: "Aatrox", category: "Frontline" },                      // positioning
-  { word: "Ahri", category: "AP" },                              // damage type
-  { word: "Akali", category: "Frontline" },                        // archetype (supreme cells executioner—bruiser style)
-  { word: "Ashe", category: "Recommended Item: Guinsoos Rageblade" }, // item
-  { word: "Braum", category: "Cost ≥ 3" },                       // cost tier
-  { word: "Caitlyn", category: "Backline access" },                     // positioning
-  { word: "Darius", category: "AD" },                            // damage type
-  { word: "Ekko", category: "Support" },                         // archetype (Prodigy, Strategist—supporty)
-  { word: "Ezreal", category: "Recommended Item: Spear of Shojin" }, // item
-  { word: "Garen", category: "Cost ≤ 3" },                       // cost tier
-  { word: "Gwen", category: "AP" },                              // damage type
-  { word: "Janna", category: "Support" },                        // archetype
-  { word: "Jarvan", category: "Frontline" },                     // positioning
-  { word: "Jhin", category: "Recommended Item: Infinity Edge" }, // item
-  { word: "KSante", category: "Cost ≥ 3" },                      // cost tier
-  { word: "Katarina", category: "Backline access" },                    // positioning
-  { word: "Kayle", category: "AP" },                             // damage type
-  { word: "Kennen", category: "Bruiser" },                       // archetype (protector, sorcerer—tank/support)
-  { word: "Lux", category: "Recommended Item: Jeweled Gauntlet" },  // item
-  { word: "Malphite", category: "Cost ≤ 3" },                    // cost tier
-  { word: "Malzahar", category: "AP" },                          // damage type
-  { word: "Neeko", category: "Frontline" },                      // positioning
-  { word: "Poppy", category: "Bruiser" },                        // archetype
-  { word: "Rakan", category: "Support" },                        // archetype
-  { word: "Rell", category: "Frontline" },                        // positioning
-  { word: "Ryze", category: "Recommended Item: Rabadons Deathcap" }, // item
-  { word: "Samira", category: "AD" },                            // damage type
-  { word: "Senna", category: "Cost ≥ 3" },                       // cost tier
-  { word: "Seraphine", category: "AP" },                         // damage type
-  { word: "Shen", category: "Frontline" },                       // positioning
-  { word: "Sivir", category: "AD" },                        // archetype (sniper, but sturdy early)
-  { word: "Swain", category: "Recommended Item: Gargoyle" },// item
-  { word: "Syndra", category: "Recommended Item: Archangel" },                            // damage type
-  { word: "Twisted Fate", category: "Backline" },                // positioning
-  { word: "Udyr", category: "Bruiser" },                         // archetype
-  { word: "Varus", category: "Recommended Item: Last Whisper" }, // item
-  { word: "Vi", category: "Cost ≤ 3" },                          // cost tier
-  { word: "Viego", category: "AD" },                             // damage type
-  { word: "Volibear", category: "Frontline" },                   // positioning
-  { word: "Xayah", category: "Recommended Item: Krakens Fury" },// item
-  { word: "Xin Zhao", category: "Tank" },                     // archetype
-  { word: "Yasuo", category: "Backline access" },                       // positioning
-  { word: "Yone", category: "Bruiser" },                              // damage type
+export interface WordCategory {
+  id: string;
+  name: string;
+  description: string;
+  words: WordPair[];
+}
 
-  // Augments
-{ word: "Trade Sector", category: "Augment - Econ (2-1)" },
-{ word: "Clear Mind", category: "Augment - Gold (2-1)" },
-{ word: "Prismatic Ticket", category: "Augment - Econ (2-1, 3-2)" },
-{ word: "Call to Chaos", category: "Augment - Prismatic (4-2)" },
-{ word: "Pandora’s Bench", category: "Augment - Econ (2-1, 3-2)" },
-{ word: "Birthday Present", category: "Augment - Prismatic (2-1)" },
-{ word: "Level Up!", category: "Augment - Econ (2-1)" },
+export interface CategoryGroup {
+  id: string;
+  name: string;
+  description: string;
+  categories: WordCategory[];
+}
 
-{ word: "Second Wind", category: "Augment - Combat (2-1, 3-2, 4-2)" },
-{ word: "Thrill of the Hunt", category: "Augment - Combat (2-1, 3-2, 4-2)" },
-{ word: "Tiny Titans", category: "Augment - Combat (2-1)" },
-{ word: "Stand United", category: "Augment - Combat (3-2, 4-2)" },
-{ word: "High End Shopping", category: "Augment - Combat (2-1, 3-2)" },
-
-{ word: "Radiant Relics", category: "Augment - Prismatic (2-1, 3-2, 4-2)" },
-{ word: "Portable Forge", category: "Augment - Items (2-1, 3-2, 4-2)" },
-{ word: "Pandora’s Items", category: "Augment - Items (2-1, 3-2, 4-2)" },
-{ word: "Item Grab Bag", category: "Augment - Items (3-2, 4-2)" },
-{ word: "Lucky Gloves", category: "Augment - Prismatic (2-1, 3-2, 4-2)" },
-{ word: "Salvage Bin", category: "Augment - Items (2-1, 3-2, 4-2)" },
-{ word: "Worth The Wait", category: "Augment - Prismatic (2-1)" },
-{ word: "Golemify", category: "Augment - Gold (3-2)" },
-
-
-  // TFT Set 15 Items
-  // { word: "Guinsoos Rageblade", category: "Set 15 Item" },
-  // { word: "Gargoyle Stoneplate", category: "Set 15 Item" },
-  // { word: "Infinity Edge", category: "Set 15 Item" },
-  // { word: "Strikers Flail", category: "Set 15 Item" },
-  // { word: "Spear of Shojin", category: "Set 15 Item" },
-  // { word: "Warmogs Armor", category: "Set 15 Item" },
-  // { word: "Edge of Night", category: "Set 15 Item" },
-  // { word: "Sunfire Cape", category: "Set 15 Item" },
-  // { word: "Spirit Visage", category: "Set 15 Item" },
-  // { word: "Jeweled Gauntlet", category: "Set 15 Item" },
-  // { word: "Thiefs Gloves", category: "Set 15 Item" },
-  // { word: "Void Staff", category: "Set 15 Item" },
-  // { word: "Evenshroud", category: "Set 15 Item" },
-  // { word: "Archangels Staff", category: "Set 15 Item" },
-  // { word: "Protectors Vow", category: "Set 15 Item" },
-  // { word: "Dragons Claw", category: "Set 15 Item" },
-  // { word: "Red Buff", category: "Set 15 Item" },
-  // { word: "Adaptive Helm", category: "Set 15 Item" },
-  // { word: "Hextech Gunblade", category: "Set 15 Item" },
-  // { word: "Bramble Vest", category: "Set 15 Item" },
-  // { word: "Bloodthirster", category: "Set 15 Item" },
-  // { word: "Morellonomicon", category: "Set 15 Item" },
-  // { word: "Hand Of Justice", category: "Set 15 Item" },
-  // { word: "Giant Slayer", category: "Set 15 Item" },
-  // { word: "Steadfast Heart", category: "Set 15 Item" },
-  // { word: "Krakens Fury", category: "Set 15 Item" },
-  // { word: "Steraks Gage", category: "Set 15 Item" },
-  // { word: "Titans Resolve", category: "Set 15 Item" },
-  // { word: "Last Whisper", category: "Set 15 Item" },
-  // { word: "Ionic Spark", category: "Set 15 Item" },
-  // { word: "Crownguard", category: "Set 15 Item" },
-  // { word: "Deathblade", category: "Set 15 Item" },
-  // { word: "Rabadons Deathcap", category: "Set 15 Item" },
-  // { word: "Blue Buff", category: "Set 15 Item" },
-  // { word: "Quicksilver", category: "Set 15 Item" },
-  // { word: "Nashors Tooth", category: "Set 15 Item" },
+export const WORD_GROUPS: CategoryGroup[] = [
+  {
+    id: 'tft',
+    name: 'TFT (Teamfight Tactics)',
+    description: 'League of Legends auto-battler content',
+    categories: [
+      {
+        id: 'tft-units',
+        name: 'TFT Units',
+        description: 'Champions and their characteristics',
+        words: [
+          { word: "Aatrox", category: "Frontline" },
+          { word: "Ahri", category: "AP" },
+          { word: "Akali", category: "Frontline" },
+          { word: "Ashe", category: "Recommended Item: Guinsoos Rageblade" },
+          { word: "Braum", category: "Cost ≥ 3" },
+          { word: "Caitlyn", category: "Backline access" },
+          { word: "Darius", category: "AD" },
+          { word: "Ekko", category: "Support" },
+          { word: "Ezreal", category: "Recommended Item: Spear of Shojin" },
+          { word: "Garen", category: "Cost ≤ 3" },
+          { word: "Gwen", category: "AP" },
+          { word: "Janna", category: "Support" },
+          { word: "Jarvan", category: "Frontline" },
+          { word: "Jhin", category: "Recommended Item: Infinity Edge" },
+          { word: "KSante", category: "Cost ≥ 3" },
+          { word: "Katarina", category: "Backline access" },
+          { word: "Kayle", category: "AP" },
+          { word: "Kennen", category: "Bruiser" },
+          { word: "Lux", category: "Recommended Item: Jeweled Gauntlet" },
+          { word: "Malphite", category: "Cost ≤ 3" },
+          { word: "Malzahar", category: "AP" },
+          { word: "Neeko", category: "Frontline" },
+          { word: "Poppy", category: "Bruiser" },
+          { word: "Rakan", category: "Support" },
+          { word: "Rell", category: "Frontline" },
+          { word: "Ryze", category: "Recommended Item: Rabadons Deathcap" },
+          { word: "Samira", category: "AD" },
+          { word: "Senna", category: "Cost ≥ 3" },
+          { word: "Seraphine", category: "AP" },
+          { word: "Shen", category: "Frontline" },
+          { word: "Sivir", category: "AD" },
+          { word: "Swain", category: "Recommended Item: Gargoyle" },
+          { word: "Syndra", category: "Recommended Item: Archangel" },
+          { word: "Twisted Fate", category: "Backline" },
+          { word: "Udyr", category: "Bruiser" },
+          { word: "Varus", category: "Recommended Item: Last Whisper" },
+          { word: "Vi", category: "Cost ≤ 3" },
+          { word: "Viego", category: "AD" },
+          { word: "Volibear", category: "Frontline" },
+          { word: "Xayah", category: "Recommended Item: Krakens Fury" },
+          { word: "Xin Zhao", category: "Tank" },
+          { word: "Yasuo", category: "Backline access" },
+          { word: "Yone", category: "Bruiser" }
+        ]
+      },
+      {
+        id: 'tft-augments',
+        name: 'TFT Augments',
+        description: 'Game-changing augment choices',
+        words: [
+          { word: "Trade Sector", category: "Augment - Econ (2-1)" },
+          { word: "Clear Mind", category: "Augment - Gold (2-1)" },
+          { word: "Prismatic Ticket", category: "Augment - Econ (2-1, 3-2)" },
+          { word: "Call to Chaos", category: "Augment - Prismatic (4-2)" },
+          { word: "Pandora's Bench", category: "Augment - Econ (2-1, 3-2)" },
+          { word: "Birthday Present", category: "Augment - Prismatic (2-1)" },
+          { word: "Level Up!", category: "Augment - Econ (2-1)" },
+          { word: "Second Wind", category: "Augment - Combat (2-1, 3-2, 4-2)" },
+          { word: "Climb The Ladder", category: "Augment - Combat (3-2, 4-2)" },
+          { word: "Tiny Titans", category: "Augment - Combat (2-1)" },
+          { word: "Stand United", category: "Augment - Combat (3-2, 4-2)" },
+          { word: "High End Shopping", category: "Augment - Combat (2-1, 3-2)" },
+          { word: "Radiant Relics", category: "Augment - Prismatic (2-1, 3-2, 4-2)" },
+          { word: "Portable Forge", category: "Augment - Items (2-1, 3-2, 4-2)" },
+          { word: "Pandora's Items", category: "Augment - Items (2-1, 3-2, 4-2)" },
+          { word: "Item Grab Bag", category: "Augment - Items (3-2, 4-2)" },
+          { word: "Lucky Gloves", category: "Augment - Prismatic (2-1, 3-2, 4-2)" },
+          { word: "Salvage Bin", category: "Augment - Items (2-1, 3-2, 4-2)" },
+          { word: "Worth The Wait", category: "Augment - Prismatic (2-1)" },
+          { word: "Golemify", category: "Augment - Gold (3-2)" }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'general',
+    name: 'General Knowledge',
+    description: 'Everyday topics everyone knows',
+    categories: [
+      {
+        id: 'food',
+        name: 'Food & Drinks',
+        description: 'Popular foods and beverages',
+        words: [
+          { word: "Pizza", category: "Italian food" },
+          { word: "Sushi", category: "Japanese food" },
+          { word: "Tacos", category: "Mexican food" },
+          { word: "Burger", category: "Fast food" },
+          { word: "Pasta", category: "Italian food" },
+          { word: "Ramen", category: "Japanese food" },
+          { word: "Chocolate", category: "Sweet treat" },
+          { word: "Coffee", category: "Hot beverage" },
+          { word: "Ice Cream", category: "Frozen dessert" },
+          { word: "Steak", category: "Meat dish" },
+          { word: "Salad", category: "Healthy food" },
+          { word: "Sandwich", category: "Lunch food" },
+          { word: "Cereal", category: "Breakfast food" },
+          { word: "Wine", category: "Alcoholic drink" },
+          { word: "Apple", category: "Fruit" }
+        ]
+      },
+      {
+        id: 'movies',
+        name: 'Movies & Shows',
+        description: 'Famous films and TV series',
+        words: [
+          { word: "Avatar", category: "Sci-fi movie" },
+          { word: "Titanic", category: "Romance movie" },
+          { word: "Friends", category: "TV comedy show" },
+          { word: "The Office", category: "TV comedy show" },
+          { word: "Breaking Bad", category: "TV drama show" },
+          { word: "Star Wars", category: "Sci-fi franchise" },
+          { word: "Marvel", category: "Superhero franchise" },
+          { word: "Harry Potter", category: "Fantasy franchise" },
+          { word: "The Lion King", category: "Disney movie" },
+          { word: "Frozen", category: "Animated movie" },
+          { word: "Game of Thrones", category: "Fantasy TV show" },
+          { word: "Stranger Things", category: "Netflix series" },
+          { word: "The Batman", category: "Superhero movie" },
+          { word: "Shrek", category: "Comedy movie" },
+          { word: "Squid Game", category: "Korean series" }
+        ]
+      }
+    ]
+  }
 ];
 
-export function getRandomWord(): WordPair {
-  return WORD_BANK[Math.floor(Math.random() * WORD_BANK.length)];
+// Helper function to get all words from selected categories
+export function getWordsFromCategories(categoryIds: string[]): WordPair[] {
+  const allWords: WordPair[] = [];
+  
+  for (const group of WORD_GROUPS) {
+    for (const category of group.categories) {
+      if (categoryIds.includes(category.id)) {
+        allWords.push(...category.words);
+      }
+    }
+  }
+  
+  return allWords;
+}
+
+// Helper function to get all categories (flattened)
+export function getAllCategories(): WordCategory[] {
+  const allCategories: WordCategory[] = [];
+  
+  for (const group of WORD_GROUPS) {
+    allCategories.push(...group.categories);
+  }
+  
+  return allCategories;
+}
+
+// Updated random word function - now works with selected categories
+export function getRandomWord(categoryIds?: string[]): WordPair {
+  let availableWords: WordPair[];
+  
+  if (categoryIds && categoryIds.length > 0) {
+    availableWords = getWordsFromCategories(categoryIds);
+  } else {
+    // Fallback to all words if no categories selected
+    availableWords = getAllCategories().flatMap(category => category.words);
+  }
+  
+  if (availableWords.length === 0) {
+    // Emergency fallback - use all words
+    availableWords = getAllCategories().flatMap(category => category.words);
+  }
+  
+  return availableWords[Math.floor(Math.random() * availableWords.length)];
 }

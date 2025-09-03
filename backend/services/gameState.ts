@@ -1,5 +1,6 @@
 // services/gameState.ts - Centralized Game State Management
 import { GameRoom } from '@shared/types';
+import { WORD_GROUPS } from '../wordBank'; // 🔧 NEW: Import word groups
 
 // Store game rooms and timers in memory
 export const gameRooms = new Map<string, GameRoom>();
@@ -24,10 +25,14 @@ export function createGameRoom(roomCode: string): GameRoom {
     maxRounds: 5,
     phaseTimeLeft: 0,
     nextRoundVotes: [],
-    readyToVoteVotes: []
+    readyToVoteVotes: [],
+    // 🔧 NEW: Initialize with default category (single selection)
+    selectedCategories: ['tft-units'], // Default to TFT Units only
+    availableGroups: WORD_GROUPS // All available category groups
   };
   
   gameRooms.set(roomCode, room);
+  console.log(`Created room ${roomCode} with default categories: ${room.selectedCategories.join(', ')}`);
   return room;
 }
 
@@ -61,6 +66,9 @@ export function resetRoomForNewGame(room: GameRoom): void {
   room.nextRoundVotes = [];
   room.readyToVoteVotes = [];
   room.phaseTimeLeft = 0;
+  
+  // 🔧 NOTE: selectedCategories and availableGroups are preserved across games
+  // This allows players to keep playing with their chosen categories
   
   // Reset player impostor status but KEEP points for persistence
   room.players.forEach(p => {
