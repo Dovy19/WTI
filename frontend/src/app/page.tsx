@@ -134,8 +134,8 @@ export default function HomePage() {
             <Users className="w-8 h-8 text-white" />
           </div>
 
-          <h1 className="text-4xl font-bold text-white mb-2">Party Games</h1>
-          <p className="text-gray-400">Join friends for epic multiplayer fun</p>
+          <h1 className="text-4xl font-bold text-white mb-2">Who's The <span className="text-red-500">Imposter?</span></h1>
+          <p className="text-gray-400">Invite friends for a fun social deduction game!</p>
         </div>
 
         {/* Player Name Input */}
@@ -214,11 +214,13 @@ export default function HomePage() {
           <p className="text-gray-400">Invite friends and play together!</p>
         </div>
 
-        {!isConnected && (
+        {!isConnected ? (
           <div className="text-center mt-4">
             <span className="text-red-400 text-sm">Connecting to server...</span>
           </div>
-        )}
+        ) : <div className="text-center mt-4">
+            <span className="text-sm text-green-400">Connected!</span>
+          </div>}
       </div>
     </div>
   );

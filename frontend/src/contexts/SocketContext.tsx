@@ -1,7 +1,7 @@
 // src/contexts/SocketContext.tsx
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { 
   Player, 
@@ -22,6 +22,7 @@ interface EnhancedSocketContextType extends SocketContextType {
   connectionError: string | null;
   retryConnection: () => void;
   cancelConnection: () => void;
+  updateCategorySelection: (categoryIds: string[]) => void;
 }
 
 const SocketContext = createContext<EnhancedSocketContextType | undefined>(undefined);
@@ -38,6 +39,24 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [currentTimer, setCurrentTimer] = useState<TimerUpdate | null>(null);
   const [gameResults, setGameResults] = useState<GameResults | null>(null);
 
+  // 🚀 PERFORMANCE: Memoize currentRoom to prevent unnecessary re-renders
+  const memoizedRoom = useMemo(() => currentRoom, [
+    currentRoom?.gameState,
+    currentRoom?.gamePhase, 
+    currentRoom?.players?.length,
+    currentRoom?.selectedCategories,
+    currentRoom?.currentRound,
+    currentRoom?.phaseTimeLeft,
+    JSON.stringify(currentRoom?.votes), // For voting changes
+    JSON.stringify(currentRoom?.currentRoundClues), // For clue submissions
+  ]);
+
+  // 🚀 PERFORMANCE: Memoize timer to prevent frequent updates
+  const memoizedTimer = useMemo(() => currentTimer, [
+    currentTimer?.timeLeft,
+    currentTimer?.phase
+  ]);
+
   const createConnection = () => {
     if (socket) {
       socket.disconnect();
@@ -48,11 +67,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://wti-q8dr.onrender.com';
     const newSocket = io(socketUrl, {
-      timeout: 15000, // 15 second connection timeout for free servers
-      reconnection: false, // Handle reconnection manually
+      timeout: 15000,
+      reconnection: false,
     });
 
-    // Connection successful
     newSocket.on('connect', () => {
       console.log('Socket connected successfully');
       setConnectionState('connected');
@@ -62,7 +80,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       setSocket(newSocket);
     });
 
-    // Connection failed
     newSocket.on('connect_error', (error) => {
       console.error('Socket connection failed:', error);
       setConnectionState('failed');
@@ -71,7 +88,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       newSocket.disconnect();
     });
 
-    // Connection timeout
     setTimeout(() => {
       if (connectionState === 'connecting') {
         console.error('Socket connection timeout');
@@ -82,7 +98,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       }
     }, 15000);
 
-    // Disconnected unexpectedly
     newSocket.on('disconnect', (reason) => {
       console.log('Socket disconnected:', reason);
       setConnectionState('disconnected');
@@ -91,69 +106,57 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       setCurrentTimer(null);
       setSocket(null);
       
-      // Auto-retry for unexpected disconnections (but not manual disconnects)
       if (reason === 'io server disconnect' || reason === 'transport close') {
         if (retryAttempts < 3) {
           setTimeout(() => {
             retryConnection();
-          }, 2000 * (retryAttempts + 1)); // Exponential backoff
+          }, 2000 * (retryAttempts + 1));
         }
       }
     });
 
-    // Set up all your existing event listeners
     setupGameEventListeners(newSocket);
-
     return newSocket;
   };
 
   const setupGameEventListeners = (socket: Socket) => {
-    // Listen for room updates
     socket.on('roomUpdate', (room: GameRoom) => {
       console.log('Room updated:', room);
       setCurrentRoom(room);
     });
 
-    // Listen for role assignments
     socket.on('roleAssignment', (role: RoleAssignment) => {
       console.log('Role assigned:', role);
       setPlayerRole(role);
     });
 
-    // Listen for timer updates
     socket.on('timerUpdate', (timerData: TimerUpdate) => {
       console.log('Timer update:', timerData);
       setCurrentTimer(timerData);
     });
 
-    // Listen for round completion
     socket.on('roundComplete', (data: RoundComplete) => {
       console.log(`Round ${data.round} complete:`, data.clues);
     });
 
-    // Listen for voting phase
     socket.on('votingPhase', () => {
       console.log('Voting phase started!');
       setCurrentTimer(null);
     });
 
-    // Listen for errors
     socket.on('error', (error: { message: string }) => {
       console.error('Game error:', error.message);
     });
 
-    // Listen for voting results
     socket.on('votingResults', (results: any) => {
       console.log('Voting results:', results);
       setGameResults(results);
     });
 
-    // Listen for final guess prompt
     socket.on('finalGuessPrompt', (data: { secretWord: string; timeLimit: number }) => {
       console.log('Final guess prompt:', data);
     });
 
-    // Listen for game results
     socket.on('gameResults', (results: GameResults) => {
       console.log('Game results:', results);
       setGameResults(results);
@@ -196,7 +199,6 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     return 'Connection failed. The server may be starting up - please try again.';
   };
 
-  // Initialize connection on mount
   useEffect(() => {
     createConnection();
     
@@ -207,117 +209,147 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Game action functions
-  const joinRoom = (playerName: string, roomCode: string) => {
+  // 🚀 PERFORMANCE: Memoize all socket functions to prevent re-creation
+  const joinRoom = useCallback((playerName: string, roomCode: string) => {
     if (socket && connectionState === 'connected') {
       socket.emit('joinRoom', { playerName, roomCode });
     }
-  };
+  }, [socket, connectionState]);
 
-  const createRoom = (playerName: string) => {
+  const createRoom = useCallback((playerName: string) => {
     const roomCode = Math.random().toString(36).substr(2, 6).toUpperCase();
     joinRoom(playerName, roomCode);
-  };
+  }, [joinRoom]);
 
-  const startGame = () => {
+  const startGame = useCallback(() => {
     if (socket && currentRoom && connectionState === 'connected') {
       socket.emit('startGame', { roomCode: currentRoom.code });
     }
-  };
+  }, [socket, currentRoom, connectionState]);
 
-  const submitClue = (clue: string) => {
+  const submitClue = useCallback((clue: string) => {
     if (socket && currentRoom && connectionState === 'connected') {
       socket.emit('submitClue', { clue, roomCode: currentRoom.code });
     }
-  };
+  }, [socket, currentRoom, connectionState]);
 
-  // LEGACY: Keep for backward compatibility
-  const readyToVote = () => {
-    console.log('Legacy readyToVote called - use voteReadyToVote instead');
-    voteReadyToVote();
-  };
-
-  const nextRound = () => {
-    console.log('Legacy nextRound called - use voteNextRound instead');
-    voteNextRound();
-  };
-
-  // Democratic voting functions
-  const voteNextRound = () => {
+  const voteNextRound = useCallback(() => {
     if (socket && currentRoom && connectionState === 'connected') {
       console.log('Voting for next round');
       socket.emit('voteNextRound', { roomCode: currentRoom.code });
     }
-  };
+  }, [socket, currentRoom, connectionState]);
 
-  const voteReadyToVote = () => {
+  const voteReadyToVote = useCallback(() => {
     if (socket && currentRoom && connectionState === 'connected') {
       console.log('Voting to go to voting phase');
       socket.emit('voteReadyToVote', { roomCode: currentRoom.code });
     }
-  };
+  }, [socket, currentRoom, connectionState]);
 
-  const submitVote = (suspectedImpostorId: string) => {
+  const submitVote = useCallback((suspectedImpostorId: string) => {
     if (socket && currentRoom && connectionState === 'connected') {
       socket.emit('submitVote', { suspectedImpostorId, roomCode: currentRoom.code });
     }
-  };
+  }, [socket, currentRoom, connectionState]);
 
-  const submitFinalGuess = (guess: string) => {
+  const submitFinalGuess = useCallback((guess: string) => {
     if (socket && currentRoom && connectionState === 'connected') {
       socket.emit('submitFinalGuess', { guess, roomCode: currentRoom.code });
     }
-  };
+  }, [socket, currentRoom, connectionState]);
 
-  const playAgain = () => {
+  const playAgain = useCallback(() => {
     if (socket && currentRoom && connectionState === 'connected') {
       socket.emit('playAgain', { roomCode: currentRoom.code });
-      // Reset local state
       setPlayerRole(null);
       setGameResults(null);
       setCurrentTimer(null);
     }
-  };
+  }, [socket, currentRoom, connectionState]);
 
-  const leaveRoom = () => {
+  const leaveRoom = useCallback(() => {
     if (socket && currentRoom) {
       socket.disconnect();
       setCurrentRoom(null);
       setPlayerRole(null);
       setGameResults(null);
       setCurrentTimer(null);
-      // Reconnect for future use
       socket.connect();
     }
-  };
+  }, [socket, currentRoom]);
+
+  const updateCategorySelection = useCallback((categoryIds: string[]) => {
+    if (socket && currentRoom && connectionState === 'connected') {
+      console.log('Updating category selection:', categoryIds);
+      socket.emit('updateCategorySelection', { roomCode: currentRoom.code, categoryIds });
+    }
+  }, [socket, currentRoom, connectionState]);
+
+  // LEGACY functions
+  const readyToVote = useCallback(() => {
+    console.log('Legacy readyToVote called - use voteReadyToVote instead');
+    voteReadyToVote();
+  }, [voteReadyToVote]);
+
+  const nextRound = useCallback(() => {
+    console.log('Legacy nextRound called - use voteNextRound instead');
+    voteNextRound();
+  }, [voteNextRound]);
+
+  // 🚀 PERFORMANCE: Memoize the context value to prevent provider re-renders
+  const contextValue = useMemo(() => ({
+    socket,
+    isConnected,
+    connectionState,
+    connectionError,
+    retryConnection,
+    cancelConnection,
+    currentRoom: memoizedRoom, // Use memoized room
+    playerRole,
+    currentTimer: memoizedTimer, // Use memoized timer
+    gameResults,
+    joinRoom,
+    createRoom,
+    startGame,
+    submitClue,
+    readyToVote,
+    nextRound,
+    voteNextRound,
+    voteReadyToVote,
+    submitVote,
+    submitFinalGuess,
+    playAgain,
+    leaveRoom,
+    updateCategorySelection,
+  }), [
+    socket,
+    isConnected,
+    connectionState,
+    connectionError,
+    retryConnection,
+    cancelConnection,
+    memoizedRoom, // Memoized dependencies
+    playerRole,
+    memoizedTimer,
+    gameResults,
+    joinRoom,
+    createRoom,
+    startGame,
+    submitClue,
+    readyToVote,
+    nextRound,
+    voteNextRound,
+    voteReadyToVote,
+    submitVote,
+    submitFinalGuess,
+    playAgain,
+    leaveRoom,
+    updateCategorySelection,
+  ]);
 
   return (
-    <SocketContext.Provider
-      value={{
-        socket,
-        isConnected,
-        connectionState,
-        connectionError,
-        retryConnection,
-        cancelConnection,
-        currentRoom,
-        playerRole,
-        currentTimer,
-        gameResults,
-        joinRoom,
-        createRoom,
-        startGame,
-        submitClue,
-        readyToVote, // LEGACY
-        nextRound, // LEGACY
-        voteNextRound,
-        voteReadyToVote,
-        submitVote,
-        submitFinalGuess,
-        playAgain,
-        leaveRoom,
-      }}
-    >
+    <SocketContext.Provider value={contextValue}>
       {children}
     </SocketContext.Provider>
   );

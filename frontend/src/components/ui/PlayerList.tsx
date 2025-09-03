@@ -7,25 +7,36 @@ import { Player } from '../../../../shared/types';
 
 interface PlayerListProps {
   players: Player[];
-  delayPointsUpdate?: boolean; // 🆕 NEW: Flag to delay showing updated points
+  delayPointsUpdate?: boolean; // NEW: Flag to delay showing updated points
 }
 
 export default function PlayerList({ players, delayPointsUpdate = false }: PlayerListProps) {
-  // 🆕 NEW: Store previous points to show during transitions
+  // NEW: Store previous points to show during transitions
   const [displayPlayers, setDisplayPlayers] = useState<Player[]>(players);
 
-  // 🆕 NEW: Update display players based on delay flag
+  // FIXED: Sort players consistently to prevent shifting
+  const getSortedPlayers = (playerList: Player[]) => {
+    return [...playerList].sort((a, b) => {
+      // Host always first
+      if (a.isHost && !b.isHost) return -1;
+      if (!a.isHost && b.isHost) return 1;
+      // Then alphabetically by name for consistent order
+      return a.name.localeCompare(b.name);
+    });
+  };
+
+  // NEW: Update display players based on delay flag
   useEffect(() => {
     if (!delayPointsUpdate) {
-      // Show current points when not delaying
-      setDisplayPlayers(players);
+      // Show current points when not delaying (use sorted order)
+      setDisplayPlayers(getSortedPlayers(players));
     }
     // When delayPointsUpdate is true, keep showing the old points (don't update displayPlayers)
   }, [players, delayPointsUpdate]);
 
-  // 🆕 NEW: Initialize displayPlayers when component first mounts
+  // NEW: Initialize displayPlayers when component first mounts
   useEffect(() => {
-    setDisplayPlayers(players);
+    setDisplayPlayers(getSortedPlayers(players));
   }, []); // Only run once on mount
 
   return (
@@ -77,7 +88,7 @@ export default function PlayerList({ players, delayPointsUpdate = false }: Playe
         </div>
       )}
 
-      {/* Points Leaderboard - Also uses display players */}
+      {/* Points Leaderboard - Also uses sorted players for consistency */}
       {displayPlayers.some(p => (p.points || 0) > 0) && (
         <div className="mt-4 p-3 bg-[#1a1a2e]/40 rounded-lg border border-[#9333ea]/20 backdrop-blur-sm">
           <h3 className="text-[#c084fc] text-sm font-medium mb-2 text-center">
